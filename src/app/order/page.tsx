@@ -194,34 +194,36 @@ export default function OrderPage() {
 
         {/* Menu Items Grid */}
         {!inventoryLoading && (
-        <ErrorBoundary fallback={
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🍽️</div>
-            <h3 className="text-xl font-semibold text-secondary mb-2">Unable to load menu</h3>
-            <p className="text-secondary">Please refresh the page to try again</p>
-          </div>
-        }>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 max-w-7xl mx-auto">
-            {getFilteredItems().map(item => (
-              <MenuItem
-                key={item.id}
-                item={item}
-                variant="card"
-                onAddToCart={() => handleItemClick(item)}
-                isLoading={isAddingToCart === item.id}
-              />
-            ))}
-          </div>
-        </ErrorBoundary>
+          <>
+            <ErrorBoundary fallback={
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🍽️</div>
+                <h3 className="text-xl font-semibold text-secondary mb-2">Unable to load menu</h3>
+                <p className="text-secondary">Please refresh the page to try again</p>
+              </div>
+            }>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 max-w-7xl mx-auto">
+                {getFilteredItems().map(item => (
+                  <MenuItem
+                    key={item.id}
+                    item={item}
+                    variant="card"
+                    onAddToCart={() => handleItemClick(item)}
+                    isLoading={isAddingToCart === item.id}
+                  />
+                ))}
+              </div>
+            </ErrorBoundary>
 
-        {/* Empty State */}
-        {getFilteredItems().length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-xl font-semibold text-secondary mb-2">No items found</h3>
-            <p className="text-secondary">Try selecting a different category</p>
-          </div>
-        )}
+            {/* Empty State */}
+            {getFilteredItems().length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-6xl mb-4">🔍</div>
+                <h3 className="text-xl font-semibold text-secondary mb-2">No items found</h3>
+                <p className="text-secondary">Try selecting a different category</p>
+              </div>
+            )}
+          </>
         )}
       </main>
 
@@ -275,7 +277,7 @@ export default function OrderPage() {
                             🥞 Choose Your Batter
                           </label>
                           <div className="grid grid-cols-1 gap-3">
-                            {item.customizations.batter.map(option => (
+                            {item.customizations.batter.map((option: string) => (
                               <button
                                 key={option}
                                 onClick={() => setTempCustomizations(prev => ({...prev, batter: option}))}
@@ -301,7 +303,7 @@ export default function OrderPage() {
                             🔥 Cooking Method
                           </label>
                           <div className="grid grid-cols-2 gap-3">
-                            {item.customizations.cooking.map(option => (
+                            {item.customizations.cooking.map((option: string) => (
                               <button
                                 key={option}
                                 onClick={() => setTempCustomizations(prev => ({...prev, cooking: option}))}
@@ -327,7 +329,7 @@ export default function OrderPage() {
                             🍯 Choose Your Sauce
                           </label>
                           <div className="grid grid-cols-2 gap-3">
-                            {item.customizations.sauce.map(option => (
+                            {item.customizations.sauce.map((option: string) => (
                               <button
                                 key={option}
                                 onClick={() => setTempCustomizations(prev => ({...prev, sauce: option}))}

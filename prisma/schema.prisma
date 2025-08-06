@@ -24,3 +24,35 @@ model Order {
   
   @@map("orders")
 }
+
+model BusinessHours {
+  id          String  @id @default(cuid())
+  dayOfWeek   Int     // 0 = Sunday, 1 = Monday, etc.
+  openTime    String? // "09:00" format or null if closed
+  closeTime   String? // "21:00" format or null if closed
+  isClosed    Boolean @default(false)
+  isHoliday   Boolean @default(false)
+  holidayName String?
+  
+  @@unique([dayOfWeek])
+  @@map("business_hours")
+}
+
+model RestaurantStatus {
+  id                String   @id @default("singleton")
+  isOpen            Boolean  @default(true)
+  isTemporarilyClosed Boolean @default(false)
+  closureReason     String?
+  lastUpdated       DateTime @default(now())
+  
+  @@map("restaurant_status")
+}
+
+model MenuItem {
+  id          String  @id
+  isAvailable Boolean @default(true)
+  isOutOfStock Boolean @default(false)
+  lastUpdated DateTime @default(now())
+  
+  @@map("menu_items")
+}

@@ -69,8 +69,8 @@ export function verifyAdminToken(token: string): AdminUser | null {
   }
 }
 
-export function setAdminCookie(token: string) {
-  const cookieStore = cookies();
+export async function setAdminCookie(token: string) {
+  const cookieStore = await cookies();
   cookieStore.set('admin-token', token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -80,14 +80,14 @@ export function setAdminCookie(token: string) {
   });
 }
 
-export function clearAdminCookie() {
-  const cookieStore = cookies();
+export async function clearAdminCookie() {
+  const cookieStore = await cookies();
   cookieStore.delete('admin-token');
 }
 
-export function getAdminFromCookies(): AdminUser | null {
+export async function getAdminFromCookies(): Promise<AdminUser | null> {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('admin-token')?.value;
     
     if (!token) {

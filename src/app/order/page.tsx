@@ -6,15 +6,18 @@ import Footer from '@/components/Footer';
 import MenuItem from '@/components/menu/MenuItem';
 import Button from '@/components/ui/Button';
 import CartSidebar from '@/components/cart/CartSidebar';
+import RestaurantStatus from '@/components/RestaurantStatus';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { MenuItem as MenuItemType, CartItem, Customizations, CategoryId, Category } from '@/types';
 import { menuItems } from '@/data/menuItems';
 import { useModal } from '@/hooks/useModal';
 import { useCart } from '@/contexts/CartContext';
+import { useInventory } from '@/hooks/useInventory';
 
 
 export default function OrderPage() {
   const { cart, customerInfo, addToCart, updateCartItemQuantity, removeFromCart, clearCart, setCustomerInfo, getTotalPrice } = useCart();
+  const { availableItems, getItemsByCategory, loading: inventoryLoading } = useInventory();
   const [showCustomization, setShowCustomization] = useState<string | null>(null);
   const [tempCustomizations, setTempCustomizations] = useState<Customizations>({});
   const [activeCategory, setActiveCategory] = useState<CategoryId>('all');
@@ -114,29 +117,23 @@ export default function OrderPage() {
   }, [cart, customerInfo, getTotalPrice, clearCart, setCustomerInfo]);
 
   const { fishItems, sidesItems, seafoodItems, popularItems } = useMemo(() => ({
-    fishItems: menuItems.filter(item => item.category === 'fish'),
-    sidesItems: menuItems.filter(item => item.category === 'sides'),
-    seafoodItems: menuItems.filter(item => item.category === 'seafood'),
-    popularItems: menuItems.filter(item => item.popular)
-  }), []);
+    fishItems: getItemsByCategory('fish'),
+    sidesItems: getItemsByCategory('sides'),
+    seafoodItems: getItemsByCategory('seafood'),
+    popularItems: getItemsByCategory('popular')
+  }), [getItemsByCategory]);
 
   const getFilteredItems = useCallback(() => {
-    switch (activeCategory) {
-      case 'fish': return fishItems;
-      case 'sides': return sidesItems;
-      case 'seafood': return seafoodItems;
-      case 'popular': return popularItems;
-      default: return menuItems;
-    }
-  }, [activeCategory, fishItems, sidesItems, seafoodItems, popularItems]);
+    return getItemsByCategory(activeCategory);
+  }, [activeCategory, getItemsByCategory]);
 
   const categories: Category[] = useMemo(() => [
-    { id: 'all', name: 'All Items', icon: '🍽️', count: menuItems.length },
+    { id: 'all', name: 'All Items', icon: '🍽️', count: availableItems.length },
     { id: 'popular', name: 'Popular', icon: '⭐', count: popularItems.length },
     { id: 'fish', name: 'Fresh Fish', icon: '🐟', count: fishItems.length },
     { id: 'sides', name: 'Sides', icon: '🍟', count: sidesItems.length },
     { id: 'seafood', name: 'Seafood', icon: '🦐', count: seafoodItems.length },
-  ], [fishItems.length, sidesItems.length, seafoodItems.length, popularItems.length]);
+  ], [availableItems.length, fishItems.length, sidesItems.length, seafoodItems.length, popularItems.length]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -154,7 +151,20 @@ export default function OrderPage() {
           <p className="text-secondary max-w-2xl mx-auto">Build your perfect meal and we'll have it ready for pickup</p>
         </div>
 
+        {/* Restaurant Status */}
+        <RestaurantStatus />
+
+        {/* Inventory Loading */}
+        {inventoryLoading && (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🍽️</div>
+            <h3 className="text-xl font-medium text-secondary mb-2">Loading menu...</h3>
+            <p className="text-secondary">Checking item availability</p>
+          </div>
+        )}
+
         {/* Category Tabs */}
+        {!inventoryLoading && (
         <div className="overflow-x-auto scrollbar-hide mb-8">
           <div className="flex justify-start sm:justify-center gap-2 p-4 bg-warm-white rounded-xl shadow-sm min-w-max sm:min-w-0 px-4 sm:px-4">
           {categories.map(category => (
@@ -180,8 +190,10 @@ export default function OrderPage() {
           ))}
           </div>
         </div>
+        )}
 
         {/* Menu Items Grid */}
+        {!inventoryLoading && (
         <ErrorBoundary fallback={
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🍽️</div>
@@ -210,6 +222,7 @@ export default function OrderPage() {
             <p className="text-secondary">Try selecting a different category</p>
           </div>
         )}
+        )}
       </main>
 
       {/* Enhanced Customization Modal */}
@@ -226,7 +239,7 @@ export default function OrderPage() {
             onClick={(e) => e.stopPropagation()}
           >
             {(() => {
-              const item = menuItems.find(i => i.id === showCustomization);
+              const item = availableItems.find(i => i.id === showCustomization);
               if (!item) return null;
               
               return (

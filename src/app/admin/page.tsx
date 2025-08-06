@@ -3,6 +3,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
+import BusinessHoursManager from '@/components/admin/BusinessHoursManager';
+import InventoryManager from '@/components/admin/InventoryManager';
+import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
 import { Order } from '@/types';
 
 const statusColors = {
@@ -20,6 +23,7 @@ const statusLabels = {
 };
 
 export default function AdminPage() {
+  const [activeTab, setActiveTab] = useState<'orders' | 'hours' | 'inventory' | 'analytics'>('orders');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -172,7 +176,7 @@ export default function AdminPage() {
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
           <h2 className="text-xl font-medium text-secondary">{error}</h2>
-          <Button onClick={fetchOrders} className="mt-4">Try Again</Button>
+          <Button onClick={() => fetchOrders()} className="mt-4">Try Again</Button>
         </div>
       </div>
     );
@@ -235,7 +239,58 @@ export default function AdminPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Filter Buttons - Mobile Scrollable */}
+        {/* Tab Navigation */}
+        <div className="mb-6">
+          <div className="border-b border-border">
+            <nav className="flex space-x-2 sm:space-x-8 overflow-x-auto scrollbar-hide">
+              <button
+                onClick={() => setActiveTab('orders')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'orders'
+                    ? 'border-coastal text-coastal'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                📋 Orders ({orders.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('analytics')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'analytics'
+                    ? 'border-coastal text-coastal'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                📊 Analytics
+              </button>
+              <button
+                onClick={() => setActiveTab('inventory')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'inventory'
+                    ? 'border-coastal text-coastal'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                📦 Inventory
+              </button>
+              <button
+                onClick={() => setActiveTab('hours')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                  activeTab === 'hours'
+                    ? 'border-coastal text-coastal'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                🕒 Business Hours
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'orders' && (
+          <>
+            {/* Filter Buttons - Mobile Scrollable */}
         <div className="mb-6">
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-2 min-w-max pb-2">
@@ -396,6 +451,23 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
+        )}
+          </>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <AnalyticsDashboard />
+        )}
+
+        {/* Inventory Tab */}
+        {activeTab === 'inventory' && (
+          <InventoryManager />
+        )}
+
+        {/* Business Hours Tab */}
+        {activeTab === 'hours' && (
+          <BusinessHoursManager />
         )}
       </main>
     </div>

@@ -61,15 +61,6 @@ export default function Header({ onCartClick }: HeaderProps) {
               </Link>
             </li>
             <li>
-              <Link 
-                href="/admin" 
-                className="hover:text-coastal transition-all duration-300 font-medium text-xs text-secondary"
-                title="Restaurant Admin Panel"
-              >
-                👨‍💼
-              </Link>
-            </li>
-            <li>
               <button
                 onClick={handleCartClick}
                 className="relative btn-warm cursor-pointer flex items-center space-x-2 min-h-[44px] min-w-[44px] px-4 py-2"

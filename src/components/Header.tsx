@@ -2,15 +2,25 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { CartItem } from '@/types';
+import { useCart } from '@/contexts/CartContext';
+import { useGlobalCart } from '@/components/GlobalCartWrapper';
 
 interface HeaderProps {
-  cart?: CartItem[];
   onCartClick?: () => void;
 }
 
-export default function Header({ cart = [], onCartClick }: HeaderProps) {
+export default function Header({ onCartClick }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { cart, getTotalItems } = useCart();
+  const { openCart } = useGlobalCart();
+  
+  const handleCartClick = () => {
+    if (onCartClick) {
+      onCartClick(); // Use local handler if provided (for order page)
+    } else {
+      openCart(); // Use global cart handler for other pages
+    }
+  };
 
   return (
     <header className="bg-warm-white coastal-shadow sticky top-0 z-50 wave-border">
@@ -51,16 +61,25 @@ export default function Header({ cart = [], onCartClick }: HeaderProps) {
               </Link>
             </li>
             <li>
+              <Link 
+                href="/admin" 
+                className="hover:text-coastal transition-all duration-300 font-medium text-xs text-secondary"
+                title="Restaurant Admin Panel"
+              >
+                👨‍💼
+              </Link>
+            </li>
+            <li>
               <button
-                onClick={onCartClick}
+                onClick={handleCartClick}
                 className="relative btn-warm cursor-pointer flex items-center space-x-2 min-h-[44px] min-w-[44px] px-4 py-2"
-                aria-label={`Shopping cart with ${cart.reduce((sum, item) => sum + item.quantity, 0)} items`}
+                aria-label={`Shopping cart with ${getTotalItems()} items`}
               >
                 <span>🛍️</span>
                 <span className="hidden xl:inline">Cart</span>
                 {cart.length > 0 && (
                   <span className="absolute -top-2 -right-2 bg-accent text-white text-xs font-bold px-2 py-1 rounded-full min-w-[1.25rem] h-5 flex items-center justify-center">
-                    {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                    {getTotalItems()}
                   </span>
                 )}
               </button>
@@ -71,14 +90,14 @@ export default function Header({ cart = [], onCartClick }: HeaderProps) {
           <div className="lg:hidden flex items-center space-x-2">
             {/* Cart Button for Mobile */}
             <button
-              onClick={onCartClick}
+              onClick={handleCartClick}
               className="relative btn-warm cursor-pointer flex items-center justify-center min-h-[44px] min-w-[44px] p-2"
-              aria-label={`Shopping cart with ${cart.reduce((sum, item) => sum + item.quantity, 0)} items`}
+              aria-label={`Shopping cart with ${getTotalItems()} items`}
             >
               <span className="text-xl">🛍️</span>
               {cart.length > 0 && (
                 <span className="absolute -top-2 -right-2 bg-accent text-white text-xs font-bold px-2 py-1 rounded-full min-w-[1.25rem] h-5 flex items-center justify-center">
-                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                  {getTotalItems()}
                 </span>
               )}
             </button>

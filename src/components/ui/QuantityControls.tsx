@@ -25,7 +25,7 @@ export default function QuantityControls({
       <button
         onClick={onDecrease}
         disabled={!canDecrease}
-        className="w-8 h-8 bg-accent bg-opacity-10 hover:bg-opacity-20 text-accent rounded-full flex items-center justify-center font-bold transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
+        className="w-8 h-8 bg-accent bg-opacity/10 hover:bg-opacity-20 text-white rounded-full flex items-center justify-center font-bold transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
         aria-label={`Decrease quantity to ${Math.max(quantity - 1, min)}`}
       >
         -
@@ -39,7 +39,7 @@ export default function QuantityControls({
       <button
         onClick={onIncrease}
         disabled={!canIncrease}
-        className="w-8 h-8 bg-seafoam bg-opacity-20 hover:bg-opacity-30 text-seafoam rounded-full flex items-center justify-center font-bold transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
+        className="w-8 h-8 bg-seafoam bg-opacity-20 hover:bg-opacity-30 text-white rounded-full flex items-center justify-center font-bold transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 cursor-pointer"
         aria-label={`Increase quantity to ${max ? Math.min(quantity + 1, max) : quantity + 1}`}
       >
         +

@@ -38,7 +38,7 @@ export default function CartItem({
             <div className="text-xs text-secondary mt-1">
               {Object.entries(item.selectedCustomizations).map(([key, value]) => 
                 value && (
-                  <span key={key} className="inline-block bg-seafoam bg-opacity-20 text-coastal px-2 py-1 rounded mr-1 mb-1">
+                  <span key={key} className="inline-block bg-accent-light bg-opacity-20 text-black px-2 py-1 rounded mr-1 mb-1">
                     {value}
                   </span>
                 )

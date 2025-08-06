@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { CartProvider } from "@/contexts/CartContext";
+import GlobalCartWrapper from "@/components/GlobalCartWrapper";
 
 export const metadata: Metadata = {
   title: "Mount Pleasant Fish and Chips - Perth, Australia",
@@ -14,7 +16,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {children}
+        <CartProvider>
+          <GlobalCartWrapper>
+            {children}
+          </GlobalCartWrapper>
+        </CartProvider>
       </body>
     </html>
   );

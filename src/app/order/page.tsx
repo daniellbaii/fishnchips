@@ -7,18 +7,14 @@ import MenuItem from '@/components/menu/MenuItem';
 import Button from '@/components/ui/Button';
 import CartSidebar from '@/components/cart/CartSidebar';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { MenuItem as MenuItemType, CartItem, CustomerInfo, Customizations, CategoryId, Category } from '@/types';
+import { MenuItem as MenuItemType, CartItem, Customizations, CategoryId, Category } from '@/types';
 import { menuItems } from '@/data/menuItems';
 import { useModal } from '@/hooks/useModal';
+import { useCart } from '@/contexts/CartContext';
 
 
 export default function OrderPage() {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
-    name: '',
-    phone: '',
-    email: '',
-  });
+  const { cart, customerInfo, addToCart, updateCartItemQuantity, removeFromCart, clearCart, setCustomerInfo, getTotalPrice } = useCart();
   const [showCustomization, setShowCustomization] = useState<string | null>(null);
   const [tempCustomizations, setTempCustomizations] = useState<Customizations>({});
   const [activeCategory, setActiveCategory] = useState<CategoryId>('all');
@@ -34,68 +30,41 @@ export default function OrderPage() {
     }, [])
   });
 
-  const addToCart = useCallback(async (item: MenuItemType, customizations?: Customizations) => {
+  const handleAddToCart = useCallback(async (item: MenuItemType, customizations?: Customizations) => {
     setIsAddingToCart(item.id);
     
     // Simulate brief loading for user feedback
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    setCart(prevCart => {
-      const cartItemWithCustomizations = {
-        ...item,
-        selectedCustomizations: customizations,
-        quantity: 1
-      };
-      
-      // Check if exact same item with same customizations exists
-      const existingItemIndex = prevCart.findIndex(cartItem => 
-        cartItem.id === item.id && 
-        JSON.stringify(cartItem.selectedCustomizations) === JSON.stringify(customizations)
-      );
-      
-      if (existingItemIndex !== -1) {
-        return prevCart.map((cartItem, index) =>
-          index === existingItemIndex
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
-      }
-      
-      return [...prevCart, cartItemWithCustomizations];
-    });
+    const cartItemWithCustomizations: CartItem = {
+      ...item,
+      selectedCustomizations: customizations,
+      quantity: 1
+    };
     
+    addToCart(cartItemWithCustomizations);
     setIsAddingToCart(null);
-  }, []);
+  }, [addToCart]);
 
   const handleItemClick = useCallback((item: MenuItemType) => {
     if (item.customizations && Object.keys(item.customizations).length > 0) {
       setShowCustomization(item.id);
       setTempCustomizations({});
     } else {
-      addToCart(item);
+      handleAddToCart(item);
     }
-  }, [addToCart]);
+  }, [handleAddToCart]);
 
   const handleCustomizationSubmit = useCallback((item: MenuItemType) => {
-    addToCart(item, tempCustomizations);
+    handleAddToCart(item, tempCustomizations);
     setShowCustomization(null);
     setTempCustomizations({});
-  }, [addToCart, tempCustomizations]);
+  }, [handleAddToCart, tempCustomizations]);
 
-  const updateCartItemQuantity = (itemId: string, newQuantity: number) => {
-    setCart(prevCart => 
-      prevCart.map(item => 
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
-
-  const removeFromCart = (itemId: string) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== itemId));
-  };
+  // Remove these functions as they're now provided by the context
 
 
-  const handleSubmitOrder = useCallback((e: React.FormEvent) => {
+  const handleSubmitOrder = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
@@ -108,16 +77,41 @@ export default function OrderPage() {
         return;
       }
       
-      // Simulate order submission
-      alert(`Order submitted! We'll call you at ${customerInfo.phone} when it's ready for pickup.`);
-      setCart([]);
-      setCustomerInfo({ name: '', phone: '', email: '' });
-      setShowCartSidebar(false);
+      // Calculate total
+      const total = getTotalPrice();
+      
+      // Submit order to database
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerName: customerInfo.name,
+          customerPhone: customerInfo.phone,
+          customerEmail: customerInfo.email || undefined,
+          items: cart,
+          total,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit order');
+      }
+      
+      if (data.success) {
+        alert(data.message);
+        clearCart();
+        setCustomerInfo({ name: '', phone: '', email: '' });
+        setShowCartSidebar(false);
+      }
     } catch (error) {
       console.error('Error submitting order:', error);
       alert('There was an error submitting your order. Please try again.');
     }
-  }, [cart.length, customerInfo.name, customerInfo.phone]);
+  }, [cart, customerInfo, getTotalPrice, clearCart, setCustomerInfo]);
 
   const { fishItems, sidesItems, seafoodItems, popularItems } = useMemo(() => ({
     fishItems: menuItems.filter(item => item.category === 'fish'),
@@ -147,7 +141,6 @@ export default function OrderPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header 
-        cart={cart} 
         onCartClick={() => setShowCartSidebar(true)} 
       />
 
@@ -370,11 +363,6 @@ export default function OrderPage() {
       <CartSidebar
         isOpen={showCartSidebar}
         onClose={() => setShowCartSidebar(false)}
-        cart={cart}
-        customerInfo={customerInfo}
-        onCustomerInfoChange={setCustomerInfo}
-        onQuantityChange={updateCartItemQuantity}
-        onRemove={removeFromCart}
         onSubmitOrder={handleSubmitOrder}
       />
       

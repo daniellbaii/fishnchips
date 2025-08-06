@@ -1,36 +1,23 @@
 import React from 'react';
 import Button from '@/components/ui/Button';
 import CartItem from '@/components/menu/CartItem';
-import { CartItem as CartItemType, CustomerInfo } from '@/types';
 import { useModal } from '@/hooks/useModal';
+import { useCart } from '@/contexts/CartContext';
 
 interface CartSidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  cart: CartItemType[];
-  customerInfo: CustomerInfo;
-  onCustomerInfoChange: (info: CustomerInfo) => void;
-  onQuantityChange: (itemId: string, newQuantity: number) => void;
-  onRemove: (itemId: string) => void;
   onSubmitOrder: (e: React.FormEvent) => void;
 }
 
 export default function CartSidebar({
   isOpen,
   onClose,
-  cart,
-  customerInfo,
-  onCustomerInfoChange,
-  onQuantityChange,
-  onRemove,
   onSubmitOrder
 }: CartSidebarProps) {
+  const { cart, customerInfo, setCustomerInfo, updateCartItemQuantity, removeFromCart, getTotalPrice } = useCart();
   // Handle modal behavior
   useModal({ isOpen, onClose });
-
-  const getTotalPrice = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
 
   return (
     <>
@@ -87,8 +74,8 @@ export default function CartSidebar({
                   <CartItem
                     key={`${item.id}-${index}`}
                     item={item}
-                    onQuantityChange={onQuantityChange}
-                    onRemove={onRemove}
+                    onQuantityChange={updateCartItemQuantity}
+                    onRemove={removeFromCart}
                   />
                 ))}
               </div>
@@ -115,7 +102,7 @@ export default function CartSidebar({
                   <input
                     type="text"
                     value={customerInfo.name}
-                    onChange={(e) => onCustomerInfoChange({...customerInfo, name: e.target.value})}
+                    onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
                     className="w-full p-4 text-base border-2 border-border focus:border-coastal rounded-lg bg-warm-white transition-colors duration-200 text-foreground min-h-[48px]"
                     placeholder="Your full name"
                     required
@@ -126,7 +113,7 @@ export default function CartSidebar({
                   <input
                     type="tel"
                     value={customerInfo.phone}
-                    onChange={(e) => onCustomerInfoChange({...customerInfo, phone: e.target.value})}
+                    onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
                     className="w-full p-4 text-base border-2 border-border focus:border-coastal rounded-lg bg-warm-white transition-colors duration-200 text-foreground min-h-[48px]"
                     placeholder="Your phone number"
                     required
@@ -137,7 +124,7 @@ export default function CartSidebar({
                   <input
                     type="email"
                     value={customerInfo.email}
-                    onChange={(e) => onCustomerInfoChange({...customerInfo, email: e.target.value})}
+                    onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
                     className="w-full p-4 text-base border-2 border-border focus:border-coastal rounded-lg bg-warm-white transition-colors duration-200 text-foreground min-h-[48px]"
                     placeholder="your@email.com (optional)"
                   />

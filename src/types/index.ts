@@ -45,3 +45,24 @@ export interface Category {
   icon: string;
   count: number;
 }
+
+export interface Order {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string | null;
+  items: CartItem[];
+  total: number;
+  status: 'pending' | 'preparing' | 'ready' | 'completed';
+  createdAt: Date;
+  estimatedReady: Date | null;
+  completedAt: Date | null;
+}
+
+export interface CreateOrderData {
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  items: CartItem[];
+  total: number;
+}

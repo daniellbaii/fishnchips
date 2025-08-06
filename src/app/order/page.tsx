@@ -5,7 +5,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MenuItem from '@/components/menu/MenuItem';
 import Button from '@/components/ui/Button';
-import CartItem from '@/components/menu/CartItem';
+import CartSidebar from '@/components/cart/CartSidebar';
 
 interface MenuItem {
   id: string;
@@ -167,6 +167,7 @@ export default function OrderPage() {
   }>({});
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null);
+  const [showCartSidebar, setShowCartSidebar] = useState<boolean>(false);
 
   // Prevent body scrolling when modal is open
   useEffect(() => {
@@ -265,9 +266,6 @@ export default function OrderPage() {
     setCart(prevCart => prevCart.filter(item => item.id !== itemId));
   };
 
-  const getTotalPrice = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
 
   const handleSubmitOrder = (e: React.FormEvent) => {
     e.preventDefault();
@@ -310,7 +308,10 @@ export default function OrderPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header />
+      <Header 
+        cart={cart} 
+        onCartClick={() => setShowCartSidebar(true)} 
+      />
 
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Header Section */}
@@ -323,12 +324,13 @@ export default function OrderPage() {
         </div>
 
         {/* Category Tabs */}
-        <div className="flex flex-wrap justify-center gap-2 mb-8 p-4 bg-warm-white rounded-xl shadow-sm">
+        <div className="overflow-x-auto scrollbar-hide mb-8">
+          <div className="flex justify-start sm:justify-center gap-2 p-4 bg-warm-white rounded-xl shadow-sm min-w-max sm:min-w-0 px-4 sm:px-4">
           {categories.map(category => (
             <button
               key={category.id}
               onClick={() => setActiveCategory(category.id)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer ${
+              className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium transition-all duration-200 cursor-pointer whitespace-nowrap min-h-[44px] ${
                 activeCategory === category.id
                   ? 'bg-coastal text-white shadow-md'
                   : 'text-secondary hover:bg-muted-warm hover:text-coastal'
@@ -345,149 +347,36 @@ export default function OrderPage() {
               </span>
             </button>
           ))}
-        </div>
-
-        <div className="grid lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-3">
-            {/* Menu Items Grid */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {getFilteredItems().map(item => (
-                <MenuItem
-                  key={item.id}
-                  item={item}
-                  variant="card"
-                  onAddToCart={() => handleItemClick(item)}
-                  isLoading={isAddingToCart === item.id}
-                />
-              ))}
-            </div>
-
-            {/* Empty State */}
-            {getFilteredItems().length === 0 && (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-xl font-semibold text-secondary mb-2">No items found</h3>
-                <p className="text-secondary">Try selecting a different category</p>
-              </div>
-            )}
-          </div>
-
-          <div className="lg:col-span-1">
-            {/* Enhanced Cart Section */}
-            <div className="menu-card sticky top-8">
-              {/* Cart Header */}
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
-                <div className="flex items-center space-x-2">
-                  <span className="text-2xl">🛍️</span>
-                  <h3 className="text-xl display-font text-coastal">Your Order</h3>
-                </div>
-                {cart.length > 0 && (
-                  <div className="bg-accent text-white text-sm font-bold px-2 py-1 rounded-full">
-                    {cart.reduce((sum, item) => sum + item.quantity, 0)}
-                  </div>
-                )}
-              </div>
-              
-              {cart.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="text-5xl mb-4 opacity-50">🍽️</div>
-                  <p className="text-secondary font-medium mb-2">Your cart is empty</p>
-                  <p className="text-sm text-secondary">Add some delicious items from our menu!</p>
-                </div>
-              ) : (
-                <>
-                  {/* Cart Items */}
-                  <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
-                    {cart.map((item, index) => (
-                      <CartItem
-                        key={`${item.id}-${index}`}
-                        item={item}
-                        onQuantityChange={updateCartItemQuantity}
-                        onRemove={removeFromCart}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Order Total */}
-                  <div className="bg-gradient-to-r from-accent to-accent-light p-4 rounded-lg mb-6 text-white">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold">Order Total</span>
-                      <span className="text-2xl font-bold">${getTotalPrice().toFixed(2)}</span>
-                    </div>
-                    <div className="text-sm opacity-90 mt-1">
-                      {cart.reduce((sum, item) => sum + item.quantity, 0)} items • Ready in 15-20 min
-                    </div>
-                  </div>
-                </>
-              )}
-
-              <form onSubmit={handleSubmitOrder} className="space-y-6">
-                <div className="text-center mb-4">
-                  <div className="text-2xl mb-2">📋</div>
-                  <h4 className="text-lg casual-font text-coastal">Your Details</h4>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2 text-foreground">Name *</label>
-                  <input
-                    type="text"
-                    value={customerInfo.name}
-                    onChange={(e) => setCustomerInfo({...customerInfo, name: e.target.value})}
-                    className="w-full p-3 border-2 border-border focus:border-coastal rounded-lg bg-warm-white transition-colors duration-200 text-foreground"
-                    placeholder="Your full name"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2 text-foreground">Phone *</label>
-                  <input
-                    type="tel"
-                    value={customerInfo.phone}
-                    onChange={(e) => setCustomerInfo({...customerInfo, phone: e.target.value})}
-                    className="w-full p-3 border-2 border-border focus:border-coastal rounded-lg bg-warm-white transition-colors duration-200 text-foreground"
-                    placeholder="Your phone number"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-2 text-foreground">Email</label>
-                  <input
-                    type="email"
-                    value={customerInfo.email}
-                    onChange={(e) => setCustomerInfo({...customerInfo, email: e.target.value})}
-                    className="w-full p-3 border-2 border-border focus:border-coastal rounded-lg bg-warm-white transition-colors duration-200 text-foreground"
-                    placeholder="your@email.com (optional)"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  variant="warm"
-                  size="lg"
-                  className="w-full py-4 font-bold"
-                >
-                  🍽️ Place Order for Pickup
-                </Button>
-              </form>
-
-              <div className="mt-6 p-4 bg-seafoam bg-opacity-10 rounded-lg border border-seafoam border-opacity-30">
-                <div className="text-center">
-                  <div className="text-2xl mb-2">📞</div>
-                  <p className="text-sm text-secondary font-medium">
-                    We'll call you when your order is ready for pickup
-                  </p>
-                  <p className="text-xs text-secondary mt-1">
-                    Usually ready in 15-20 minutes
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
+
+        {/* Menu Items Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 max-w-7xl mx-auto">
+          {getFilteredItems().map(item => (
+            <MenuItem
+              key={item.id}
+              item={item}
+              variant="card"
+              onAddToCart={() => handleItemClick(item)}
+              isLoading={isAddingToCart === item.id}
+            />
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {getFilteredItems().length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-xl font-semibold text-secondary mb-2">No items found</h3>
+            <p className="text-secondary">Try selecting a different category</p>
+          </div>
+        )}
       </main>
 
       {/* Enhanced Customization Modal */}
       {showCustomization && (
         <div 
-          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
           onClick={() => {
             setShowCustomization(null);
             setTempCustomizations({});
@@ -630,6 +519,18 @@ export default function OrderPage() {
           </div>
         </div>
       )}
+      
+      {/* Cart Sidebar */}
+      <CartSidebar
+        isOpen={showCartSidebar}
+        onClose={() => setShowCartSidebar(false)}
+        cart={cart}
+        customerInfo={customerInfo}
+        onCustomerInfoChange={setCustomerInfo}
+        onQuantityChange={updateCartItemQuantity}
+        onRemove={removeFromCart}
+        onSubmitOrder={handleSubmitOrder}
+      />
       
       <Footer />
     </div>

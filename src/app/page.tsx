@@ -17,11 +17,11 @@ export default function Home() {
             <div className="absolute bottom-32 left-1/3 w-36 h-36 bg-accent-light rounded-full mix-blend-multiply filter blur-xl animate-pulse delay-2000"></div>
           </div>
           <div className="max-w-4xl mx-auto text-center px-4 relative z-10">
-            <h2 className="text-5xl md:text-7xl display-font mb-8 text-foreground leading-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl display-font mb-8 text-foreground leading-tight">
               Authentic Fish & Chips
-              <span className="block text-coastal text-4xl md:text-5xl mt-2">Since 1985</span>
+              <span className="block text-coastal text-2xl sm:text-3xl md:text-4xl lg:text-5xl mt-2">Since 1985</span>
             </h2>
-            <p className="text-xl md:text-2xl mb-12 text-secondary max-w-3xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg md:text-xl lg:text-2xl mb-12 text-secondary max-w-3xl mx-auto leading-relaxed">
               Fresh fish, golden crispy chips, and traditional Australian seafood served with love in the heart of Mount Pleasant, Perth. 
               <span className="block mt-2 text-lg text-accent font-semibold">Four decades of family tradition</span>
             </p>
@@ -43,11 +43,11 @@ export default function Home() {
         <section id="menu" className="py-20 bg-muted-warm relative">
           <div className="max-w-6xl mx-auto px-4">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl display-font text-center mb-4 text-foreground">Our Fresh Menu</h2>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl display-font text-center mb-4 text-foreground">Our Fresh Menu</h2>
               <p className="text-lg text-secondary max-w-2xl mx-auto">Locally sourced fish, hand-cut chips, and traditional favorites prepared fresh daily</p>
             </div>
             
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               <MenuCard title="Fresh Fish" icon="🐟">
                 <ul className="space-y-4">
                   <MenuItem variant="list" item={{ name: "Barramundi", price: 12.50 }} />
@@ -84,7 +84,7 @@ export default function Home() {
           <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
             <div className="mb-8">
               <div className="text-6xl mb-4">🏖️</div>
-              <h2 className="text-4xl md:text-5xl display-font text-foreground mb-4">Our Story</h2>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl display-font text-foreground mb-4">Our Story</h2>
               <div className="w-24 h-1 bg-accent mx-auto rounded-full"></div>
             </div>
             <div className="space-y-8 text-lg text-secondary leading-relaxed">
@@ -116,10 +116,10 @@ export default function Home() {
           <div className="max-w-6xl mx-auto px-4">
             <div className="text-center mb-16">
               <div className="text-6xl mb-4">📍</div>
-              <h2 className="text-4xl md:text-5xl display-font text-foreground mb-4">Come Visit Us</h2>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl display-font text-foreground mb-4">Come Visit Us</h2>
               <p className="text-lg text-secondary">We can't wait to serve you our famous fish and chips!</p>
             </div>
-            <div className="contact-info grid md:grid-cols-3 gap-8">
+            <div className="contact-info grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               <div className="menu-card text-center">
                 <div className="text-4xl mb-4">🏠</div>
                 <h3 className="text-xl casual-font mb-4 text-coastal">Location</h3>

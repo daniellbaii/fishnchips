@@ -1,3 +1,5 @@
+import React from 'react';
+
 interface MenuCardProps {
   title: string;
   icon: string;

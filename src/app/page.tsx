@@ -1,8 +1,11 @@
+import React from 'react';
+import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MenuCard from '@/components/menu/MenuCard';
 import MenuItem from '@/components/menu/MenuItem';
 import Button from '@/components/ui/Button';
+import { menuItems } from '@/data/menuItems';
 
 export default function Home() {
   return (
@@ -32,9 +35,9 @@ export default function Home() {
                 </a>
               </Button>
               <Button variant="warm" size="lg" className="px-8" asChild>
-                <a href="#menu">
+                <Link href="#menu">
                   🍟 View Our Menu
-                </a>
+                </Link>
               </Button>
             </div>
           </div>
@@ -50,29 +53,39 @@ export default function Home() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
               <MenuCard title="Fresh Fish" icon="🐟">
                 <ul className="space-y-4">
-                  <MenuItem variant="list" item={{ name: "Barramundi", price: 12.50 }} />
-                  <MenuItem variant="list" item={{ name: "Snapper", price: 13.00 }} />
-                  <MenuItem variant="list" item={{ name: "Flathead", price: 11.50 }} />
-                  <MenuItem variant="list" item={{ name: "Whiting", price: 10.50 }} />
+                  {menuItems.filter(item => item.category === 'fish').slice(0, 4).map(item => (
+                    <MenuItem key={item.id} variant="list" item={item} />
+                  ))}
                 </ul>
               </MenuCard>
 
               <MenuCard title="Chips & Sides" icon="🍟">
                 <ul className="space-y-4">
-                  <MenuItem variant="list" item={{ name: "Regular Chips", price: 4.50 }} />
-                  <MenuItem variant="list" item={{ name: "Large Chips", price: 6.50 }} />
-                  <MenuItem variant="list" item={{ name: "Potato Scallops", price: 2.50 }} />
-                  <MenuItem variant="list" item={{ name: "Dim Sims", price: 3.00 }} />
+                  {menuItems.filter(item => item.category === 'sides').map(item => (
+                    <MenuItem key={item.id} variant="list" item={item} />
+                  ))}
                 </ul>
               </MenuCard>
 
               <MenuCard title="Seafood Specials" icon="🦐">
                 <ul className="space-y-4">
-                  <MenuItem variant="list" item={{ name: "Prawns (6 pieces)", price: 8.50 }} />
-                  <MenuItem variant="list" item={{ name: "Calamari Rings", price: 7.50 }} />
-                  <MenuItem variant="list" item={{ name: "Crab Sticks (4 pieces)", price: 6.00 }} />
+                  {menuItems.filter(item => item.category === 'seafood').map(item => (
+                    <MenuItem key={item.id} variant="list" item={item} />
+                  ))}
                 </ul>
               </MenuCard>
+            </div>
+            
+            {/* Call to Action Button */}
+            <div className="text-center mt-12">
+              <Button variant="coastal" size="lg" className="px-8" asChild>
+                <Link href="/order">
+                  🍽️ View Full Menu & Order Online
+                </Link>
+              </Button>
+              <p className="text-sm text-secondary mt-3">
+                Customize your order and get pickup ready times
+              </p>
             </div>
           </div>
         </section>

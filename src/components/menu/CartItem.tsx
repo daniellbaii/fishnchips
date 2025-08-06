@@ -1,18 +1,9 @@
+import React from 'react';
 import QuantityControls from '@/components/ui/QuantityControls';
+import type { CartItem } from '@/types';
 
 interface CartItemProps {
-  item: {
-    id: string;
-    name: string;
-    price: number;
-    quantity: number;
-    selectedCustomizations?: {
-      batter?: string;
-      size?: string;
-      cooking?: string;
-      sauce?: string;
-    };
-  };
+  item: CartItem;
   onQuantityChange: (itemId: string, newQuantity: number) => void;
   onRemove: (itemId: string) => void;
   showCustomizations?: boolean;

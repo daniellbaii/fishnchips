@@ -1,212 +1,40 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MenuItem from '@/components/menu/MenuItem';
 import Button from '@/components/ui/Button';
 import CartSidebar from '@/components/cart/CartSidebar';
+import ErrorBoundary from '@/components/ErrorBoundary';
+import { MenuItem as MenuItemType, CartItem, CustomerInfo, Customizations, CategoryId, Category } from '@/types';
+import { menuItems } from '@/data/menuItems';
+import { useModal } from '@/hooks/useModal';
 
-interface MenuItem {
-  id: string;
-  name: string;
-  price: number;
-  category: string;
-  description: string;
-  image: string;
-  popular?: boolean;
-  customizations?: {
-    batter?: string[];
-    size?: string[];
-    cooking?: string[];
-    sauce?: string[];
-  };
-}
-
-interface CartItem extends MenuItem {
-  quantity: number;
-  selectedCustomizations?: {
-    batter?: string;
-    size?: string;
-    cooking?: string;
-    sauce?: string;
-  };
-}
-
-const menuItems: MenuItem[] = [
-  { 
-    id: 'barramundi', 
-    name: 'Barramundi', 
-    price: 12.50, 
-    category: 'fish',
-    description: 'Premium Australian barramundi, fresh caught and perfectly seasoned',
-    image: '🐟',
-    popular: true,
-    customizations: {
-      batter: ['Traditional', 'Tempura', 'Gluten-Free'],
-      cooking: ['Fried', 'Grilled']
-    }
-  },
-  { 
-    id: 'snapper', 
-    name: 'Snapper', 
-    price: 13.00, 
-    category: 'fish',
-    description: 'Local Perth snapper, delicate and flaky with a golden crisp',
-    image: '🐟',
-    customizations: {
-      batter: ['Traditional', 'Tempura', 'Gluten-Free'],
-      cooking: ['Fried', 'Grilled']
-    }
-  },
-  { 
-    id: 'flathead', 
-    name: 'Flathead', 
-    price: 11.50, 
-    category: 'fish',
-    description: 'Sweet and tender flathead with our signature beer batter',
-    image: '🐟',
-    customizations: {
-      batter: ['Traditional', 'Tempura', 'Gluten-Free'],
-      cooking: ['Fried', 'Grilled']
-    }
-  },
-  { 
-    id: 'whiting', 
-    name: 'Whiting', 
-    price: 10.50, 
-    category: 'fish',
-    description: 'Delicate whiting fillets, perfect for first-time fish lovers',
-    image: '🐟',
-    customizations: {
-      batter: ['Traditional', 'Tempura', 'Gluten-Free'],
-      cooking: ['Fried', 'Grilled']
-    }
-  },
-  { 
-    id: 'regular-chips', 
-    name: 'Regular Chips', 
-    price: 4.50, 
-    category: 'sides',
-    description: 'Hand-cut potatoes, crispy outside and fluffy inside',
-    image: '🍟',
-    popular: true,
-    customizations: {
-      sauce: ['Tomato', 'Aioli', 'Tartare', 'Vinegar', 'None']
-    }
-  },
-  { 
-    id: 'large-chips', 
-    name: 'Large Chips', 
-    price: 6.50, 
-    category: 'sides',
-    description: 'Perfect for sharing - our famous hand-cut chips',
-    image: '🍟',
-    customizations: {
-      sauce: ['Tomato', 'Aioli', 'Tartare', 'Vinegar', 'None']
-    }
-  },
-  { 
-    id: 'potato-scallops', 
-    name: 'Potato Scallops', 
-    price: 2.50, 
-    category: 'sides',
-    description: 'Thinly sliced potato in crispy golden batter - $2.50 each',
-    image: '🥔'
-  },
-  { 
-    id: 'dim-sims', 
-    name: 'Dim Sims', 
-    price: 3.00, 
-    category: 'sides',
-    description: 'Traditional steamed dim sims with soy dipping sauce - $3.00 each',
-    image: '🥟'
-  },
-  { 
-    id: 'prawns', 
-    name: 'Prawns (6 pieces)', 
-    price: 8.50, 
-    category: 'seafood',
-    description: 'Succulent tiger prawns in light, crispy batter',
-    image: '🦐',
-    customizations: {
-      batter: ['Traditional', 'Tempura']
-    }
-  },
-  { 
-    id: 'calamari', 
-    name: 'Calamari Rings', 
-    price: 7.50, 
-    category: 'seafood',
-    description: 'Tender calamari rings, lightly seasoned and perfectly fried',
-    image: '🦑'
-  },
-  { 
-    id: 'crab-sticks', 
-    name: 'Crab Sticks (4 pieces)', 
-    price: 6.00, 
-    category: 'seafood',
-    description: 'Golden fried crab sticks with sweet chili dipping sauce',
-    image: '🦀'
-  },
-];
 
 export default function OrderPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [customerInfo, setCustomerInfo] = useState({
+  const [customerInfo, setCustomerInfo] = useState<CustomerInfo>({
     name: '',
     phone: '',
     email: '',
   });
   const [showCustomization, setShowCustomization] = useState<string | null>(null);
-  const [tempCustomizations, setTempCustomizations] = useState<{
-    batter?: string;
-    size?: string;
-    cooking?: string;
-    sauce?: string;
-  }>({});
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [tempCustomizations, setTempCustomizations] = useState<Customizations>({});
+  const [activeCategory, setActiveCategory] = useState<CategoryId>('all');
   const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null);
   const [showCartSidebar, setShowCartSidebar] = useState<boolean>(false);
 
-  // Prevent body scrolling when modal is open
-  useEffect(() => {
-    if (showCustomization) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+  // Handle customization modal
+  useModal({ 
+    isOpen: !!showCustomization, 
+    onClose: useCallback(() => {
+      setShowCustomization(null);
+      setTempCustomizations({});
+    }, [])
+  });
 
-    // Cleanup function to restore scrolling when component unmounts
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [showCustomization]);
-
-  // Handle ESC key to close modal
-  useEffect(() => {
-    const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && showCustomization) {
-        setShowCustomization(null);
-        setTempCustomizations({});
-      }
-    };
-
-    if (showCustomization) {
-      document.addEventListener('keydown', handleEscKey);
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscKey);
-    };
-  }, [showCustomization]);
-
-  const addToCart = async (item: MenuItem, customizations?: {
-    batter?: string;
-    size?: string;
-    cooking?: string;
-    sauce?: string;
-  }) => {
+  const addToCart = useCallback(async (item: MenuItemType, customizations?: Customizations) => {
     setIsAddingToCart(item.id);
     
     // Simulate brief loading for user feedback
@@ -237,22 +65,22 @@ export default function OrderPage() {
     });
     
     setIsAddingToCart(null);
-  };
+  }, []);
 
-  const handleItemClick = (item: MenuItem) => {
+  const handleItemClick = useCallback((item: MenuItemType) => {
     if (item.customizations && Object.keys(item.customizations).length > 0) {
       setShowCustomization(item.id);
       setTempCustomizations({});
     } else {
       addToCart(item);
     }
-  };
+  }, [addToCart]);
 
-  const handleCustomizationSubmit = (item: MenuItem) => {
+  const handleCustomizationSubmit = useCallback((item: MenuItemType) => {
     addToCart(item, tempCustomizations);
     setShowCustomization(null);
     setTempCustomizations({});
-  };
+  }, [addToCart, tempCustomizations]);
 
   const updateCartItemQuantity = (itemId: string, newQuantity: number) => {
     setCart(prevCart => 
@@ -267,28 +95,38 @@ export default function OrderPage() {
   };
 
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = useCallback((e: React.FormEvent) => {
     e.preventDefault();
-    if (cart.length === 0) {
-      alert('Please add items to your cart before ordering.');
-      return;
-    }
-    if (!customerInfo.name || !customerInfo.phone) {
-      alert('Please fill in your name and phone number.');
-      return;
-    }
     
-    alert(`Order submitted! We'll call you at ${customerInfo.phone} when it's ready for pickup.`);
-    setCart([]);
-    setCustomerInfo({ name: '', phone: '', email: '' });
-  };
+    try {
+      if (cart.length === 0) {
+        alert('Please add items to your cart before ordering.');
+        return;
+      }
+      if (!customerInfo.name || !customerInfo.phone) {
+        alert('Please fill in your name and phone number.');
+        return;
+      }
+      
+      // Simulate order submission
+      alert(`Order submitted! We'll call you at ${customerInfo.phone} when it's ready for pickup.`);
+      setCart([]);
+      setCustomerInfo({ name: '', phone: '', email: '' });
+      setShowCartSidebar(false);
+    } catch (error) {
+      console.error('Error submitting order:', error);
+      alert('There was an error submitting your order. Please try again.');
+    }
+  }, [cart.length, customerInfo.name, customerInfo.phone]);
 
-  const fishItems = menuItems.filter(item => item.category === 'fish');
-  const sidesItems = menuItems.filter(item => item.category === 'sides');
-  const seafoodItems = menuItems.filter(item => item.category === 'seafood');
-  const popularItems = menuItems.filter(item => item.popular);
+  const { fishItems, sidesItems, seafoodItems, popularItems } = useMemo(() => ({
+    fishItems: menuItems.filter(item => item.category === 'fish'),
+    sidesItems: menuItems.filter(item => item.category === 'sides'),
+    seafoodItems: menuItems.filter(item => item.category === 'seafood'),
+    popularItems: menuItems.filter(item => item.popular)
+  }), []);
 
-  const getFilteredItems = () => {
+  const getFilteredItems = useCallback(() => {
     switch (activeCategory) {
       case 'fish': return fishItems;
       case 'sides': return sidesItems;
@@ -296,15 +134,15 @@ export default function OrderPage() {
       case 'popular': return popularItems;
       default: return menuItems;
     }
-  };
+  }, [activeCategory, fishItems, sidesItems, seafoodItems, popularItems]);
 
-  const categories = [
+  const categories: Category[] = useMemo(() => [
     { id: 'all', name: 'All Items', icon: '🍽️', count: menuItems.length },
     { id: 'popular', name: 'Popular', icon: '⭐', count: popularItems.length },
     { id: 'fish', name: 'Fresh Fish', icon: '🐟', count: fishItems.length },
     { id: 'sides', name: 'Sides', icon: '🍟', count: sidesItems.length },
     { id: 'seafood', name: 'Seafood', icon: '🦐', count: seafoodItems.length },
-  ];
+  ], [fishItems.length, sidesItems.length, seafoodItems.length, popularItems.length]);
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -351,17 +189,25 @@ export default function OrderPage() {
         </div>
 
         {/* Menu Items Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 max-w-7xl mx-auto">
-          {getFilteredItems().map(item => (
-            <MenuItem
-              key={item.id}
-              item={item}
-              variant="card"
-              onAddToCart={() => handleItemClick(item)}
-              isLoading={isAddingToCart === item.id}
-            />
-          ))}
-        </div>
+        <ErrorBoundary fallback={
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">🍽️</div>
+            <h3 className="text-xl font-semibold text-secondary mb-2">Unable to load menu</h3>
+            <p className="text-secondary">Please refresh the page to try again</p>
+          </div>
+        }>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 max-w-7xl mx-auto">
+            {getFilteredItems().map(item => (
+              <MenuItem
+                key={item.id}
+                item={item}
+                variant="card"
+                onAddToCart={() => handleItemClick(item)}
+                isLoading={isAddingToCart === item.id}
+              />
+            ))}
+          </div>
+        </ErrorBoundary>
 
         {/* Empty State */}
         {getFilteredItems().length === 0 && (

@@ -1,25 +1,8 @@
-import { useEffect } from 'react';
+import React from 'react';
 import Button from '@/components/ui/Button';
 import CartItem from '@/components/menu/CartItem';
-
-interface CartItemType {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  selectedCustomizations?: {
-    batter?: string;
-    size?: string;
-    cooking?: string;
-    sauce?: string;
-  };
-}
-
-interface CustomerInfo {
-  name: string;
-  phone: string;
-  email: string;
-}
+import { CartItem as CartItemType, CustomerInfo } from '@/types';
+import { useModal } from '@/hooks/useModal';
 
 interface CartSidebarProps {
   isOpen: boolean;
@@ -42,26 +25,8 @@ export default function CartSidebar({
   onRemove,
   onSubmitOrder
 }: CartSidebarProps) {
-  // Handle ESC key to close popup
-  useEffect(() => {
-    const handleEscKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && isOpen) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscKey);
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscKey);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, onClose]);
+  // Handle modal behavior
+  useModal({ isOpen, onClose });
 
   const getTotalPrice = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0);

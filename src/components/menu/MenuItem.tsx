@@ -1,19 +1,13 @@
-interface MenuItemBase {
-  name: string;
-  price: number;
-  description?: string;
-  image?: string;
-  popular?: boolean;
-  customizations?: any;
-}
+import React from 'react';
+import { MenuItem as MenuItemType } from '@/types';
 
 interface MenuItemListProps {
-  item: MenuItemBase;
+  item: MenuItemType;
   variant: 'list';
 }
 
 interface MenuItemCardProps {
-  item: MenuItemBase;
+  item: MenuItemType;
   variant: 'card';
   onAddToCart?: () => void;
   isLoading?: boolean;

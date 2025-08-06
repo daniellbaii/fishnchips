@@ -33,10 +33,8 @@
   --color-sand: var(--sand);
   --color-ocean-light: var(--ocean-light);
   --color-warm-white: var(--warm-white);
-  --color-coastal: var(--primary);
-  --color-warm: var(--accent);
-  --font-sans: 'Nunito', var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'Nunito', sans-serif;
+  --font-mono: 'Courier New', monospace;
 }
 
 body {

@@ -1,8 +1,11 @@
+import React from 'react';
+import Link from 'next/link';
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-warm-muted py-8">
+    <footer className="bg-warm-white py-8 coastal-shadow">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           {/* Brand */}
@@ -17,30 +20,24 @@ export default function Footer() {
 
           {/* Quick Links */}
           <nav className="flex space-x-6 text-sm">
-            <a 
-              href="/#menu" 
+            <Link 
+              href="/order" 
               className="text-secondary hover:text-coastal transition-colors"
             >
-              Menu
-            </a>
-            <a 
+              Order
+            </Link>
+            <Link 
               href="/#about" 
               className="text-secondary hover:text-coastal transition-colors"
             >
               About
-            </a>
-            <a 
+            </Link>
+            <Link 
               href="/#contact" 
               className="text-secondary hover:text-coastal transition-colors"
             >
               Contact
-            </a>
-            <a 
-              href="/order" 
-              className="text-accent hover:text-warm transition-colors font-medium"
-            >
-              Order Online
-            </a>
+            </Link>
           </nav>
 
           {/* Copyright */}

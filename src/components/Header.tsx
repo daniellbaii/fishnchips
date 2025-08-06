@@ -1,19 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-
-interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  selectedCustomizations?: {
-    batter?: string;
-    size?: string;
-    cooking?: string;
-    sauce?: string;
-  };
-}
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { CartItem } from '@/types';
 
 interface HeaderProps {
   cart?: CartItem[];
@@ -29,42 +18,43 @@ export default function Header({ cart = [], onCartClick }: HeaderProps) {
         <div className="flex justify-between items-center">
           {/* Logo */}
           <h1 className="text-xl sm:text-2xl md:text-3xl display-font text-coastal flex-1 min-w-0">
-            <a href="/" className="hover:text-primary-dark transition-colors block truncate">
+            <Link href="/" className="hover:text-primary-dark transition-colors block truncate">
               <span className="hidden sm:inline">Mount Pleasant Fish and Chips</span>
               <span className="sm:hidden">Mount Pleasant F&C</span>
-            </a>
+            </Link>
           </h1>
           
           {/* Desktop Navigation */}
           <ul className="hidden lg:flex space-x-6 items-center">
             <li>
-              <a 
+              <Link 
                 href="/order" 
                 className="hover:text-coastal transition-all duration-300 font-medium text-sm xl:text-base"
               >
                 Order
-              </a>
+              </Link>
             </li>
             <li>
-              <a 
+              <Link 
                 href="/#about" 
                 className="hover:text-coastal transition-all duration-300 font-medium text-sm xl:text-base"
               >
                 About
-              </a>
+              </Link>
             </li>
             <li>
-              <a 
+              <Link 
                 href="/#contact" 
                 className="hover:text-coastal transition-all duration-300 font-medium text-sm xl:text-base"
               >
                 Contact
-              </a>
+              </Link>
             </li>
             <li>
               <button
                 onClick={onCartClick}
                 className="relative btn-warm cursor-pointer flex items-center space-x-2 min-h-[44px] min-w-[44px] px-4 py-2"
+                aria-label={`Shopping cart with ${cart.reduce((sum, item) => sum + item.quantity, 0)} items`}
               >
                 <span>🛍️</span>
                 <span className="hidden xl:inline">Cart</span>
@@ -83,6 +73,7 @@ export default function Header({ cart = [], onCartClick }: HeaderProps) {
             <button
               onClick={onCartClick}
               className="relative btn-warm cursor-pointer flex items-center justify-center min-h-[44px] min-w-[44px] p-2"
+              aria-label={`Shopping cart with ${cart.reduce((sum, item) => sum + item.quantity, 0)} items`}
             >
               <span className="text-xl">🛍️</span>
               {cart.length > 0 && (
@@ -122,31 +113,31 @@ export default function Header({ cart = [], onCartClick }: HeaderProps) {
           <div className="lg:hidden border-t border-border mt-4 pt-4">
             <ul className="space-y-2">
               <li>
-                <a 
+                <Link 
                   href="/order"
                   className="py-3 px-4 hover:bg-muted-warm hover:text-coastal transition-all duration-300 font-medium rounded-lg text-center min-h-[44px] flex items-center justify-center"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   📋 Order Online
-                </a>
+                </Link>
               </li>
               <li>
-                <a 
+                <Link 
                   href="/#about"
                   className="py-3 px-4 hover:bg-muted-warm hover:text-coastal transition-all duration-300 font-medium rounded-lg text-center min-h-[44px] flex items-center justify-center"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   🏖️ About Us
-                </a>
+                </Link>
               </li>
               <li>
-                <a 
+                <Link 
                   href="/#contact"
                   className="py-3 px-4 hover:bg-muted-warm hover:text-coastal transition-all duration-300 font-medium rounded-lg text-center min-h-[44px] flex items-center justify-center"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   📍 Contact
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

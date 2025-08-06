@@ -1,26 +1,219 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Warm, coastal-inspired color palette */
+  --background: #fef7f0; /* Warm cream */
+  --foreground: #2c3e50; /* Deep navy for readability */
+  --primary: #1976d2; /* Ocean blue */
+  --primary-dark: #1565c0; /* Deeper ocean blue */
+  --secondary: #8d6e63; /* Sandy brown */
+  --accent: #ff7043; /* Warm coral/sunset orange */
+  --accent-light: #ffab91; /* Light coral */
+  --muted: #f5f5dc; /* Warm beige */
+  --border: #ddbea9; /* Sandy border */
+  --seafoam: #81c784; /* Seafoam green accent */
+  --sand: #f4a460; /* Sandy yellow */
+  --ocean-light: #4fc3f7; /* Light ocean blue */
+  --warm-white: #fffef7; /* Warm white */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
+  --color-muted: var(--muted);
+  --color-muted-warm: var(--muted);
+  --color-border: var(--border);
+  --color-seafoam: var(--seafoam);
+  --color-sand: var(--sand);
+  --color-ocean-light: var(--ocean-light);
+  --color-warm-white: var(--warm-white);
+  --color-coastal: var(--primary);
+  --color-warm: var(--accent);
+  --font-sans: 'Nunito', var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  background: var(--warm-white);
+  color: var(--foreground);
+  font-family: 'Nunito', var(--font-sans), Arial, Helvetica, sans-serif;
+  font-weight: 400;
+  line-height: 1.6;
+  /* Subtle coastal texture */
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 247, 0.8) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(129, 199, 132, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 50% 100%, rgba(25, 118, 210, 0.05) 0%, transparent 50%);
+  background-size: 400px 400px, 300px 300px, 500px 500px;
+  background-position: 0 0, 100px 100px, 200px 200px;
+  animation: gentleWave 20s ease-in-out infinite;
+}
+
+@keyframes gentleWave {
+  0%, 100% {
+    background-position: 0 0, 100px 100px, 200px 200px;
+  }
+  50% {
+    background-position: 50px 50px, 150px 50px, 250px 150px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+html {
+  scroll-behavior: smooth;
+}
+
+/* Coastal-inspired utility classes */
+.coastal-shadow {
+  box-shadow: 0 4px 20px rgba(25, 118, 210, 0.1), 0 1px 3px rgba(25, 118, 210, 0.1);
+}
+
+.warm-shadow {
+  box-shadow: 0 4px 20px rgba(255, 112, 67, 0.15), 0 1px 3px rgba(255, 112, 67, 0.1);
+}
+
+.sand-texture {
+  background-image: radial-gradient(circle at 1px 1px, rgba(244, 164, 96, 0.3) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+
+.wave-border {
+  position: relative;
+}
+
+.wave-border::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--ocean-light), var(--primary), var(--seafoam));
+  border-radius: 3px;
+}
+
+.btn-coastal {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--ocean-light) 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 24px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+}
+
+.btn-coastal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(25, 118, 210, 0.4);
+  filter: brightness(1.1);
+}
+
+.btn-warm {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 112, 67, 0.3);
+}
+
+.btn-warm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 112, 67, 0.4);
+  filter: brightness(1.1);
+}
+
+.menu-card {
+  background: var(--warm-white);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--seafoam), var(--ocean-light));
+}
+
+.menu-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(25, 118, 210, 0.15);
+  border-color: var(--ocean-light);
+}
+
+.text-coastal {
+  color: var(--primary);
+}
+
+.text-warm {
+  color: var(--accent);
+}
+
+.text-sand {
+  color: var(--sand);
+}
+
+.bg-coastal {
+  background-color: var(--primary);
+}
+
+.bg-warm {
+  background-color: var(--accent);
+}
+
+.bg-muted-warm {
+  background-color: var(--muted);
+}
+
+.hero-gradient {
+  background: linear-gradient(135deg, 
+    rgba(25, 118, 210, 0.1) 0%, 
+    rgba(255, 255, 247, 0.9) 25%,
+    rgba(129, 199, 132, 0.1) 50%,
+    rgba(255, 112, 67, 0.1) 75%,
+    rgba(25, 118, 210, 0.1) 100%);
+}
+
+/* Typography enhancements */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.display-font {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.casual-font {
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+}
+
+/* Utility classes */
+.line-clamp-2 {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }

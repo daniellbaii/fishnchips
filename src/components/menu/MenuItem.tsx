@@ -38,7 +38,10 @@ export default function MenuItem(props: MenuItemProps) {
     
     return (
       <div className="group relative">
-        <div className="menu-card hover:shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-1">
+        <div 
+          className="menu-card hover:shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-1"
+          onClick={onAddToCart}
+        >
           {/* Price Badge */}
           <div className="absolute top-4 right-4 bg-accent text-white font-bold px-3 py-1 rounded-full text-lg shadow-lg z-10">
             ${item.price.toFixed(2)}
@@ -78,12 +81,15 @@ export default function MenuItem(props: MenuItemProps) {
             {/* Action Button */}
             <div className="space-y-2">
               <button
-                onClick={onAddToCart}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToCart?.();
+                }}
                 disabled={isLoading}
                 className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
                   isLoading
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'btn-coastal hover:shadow-lg'
+                    : 'btn-coastal hover:shadow-lg cursor-pointer'
                 }`}
               >
                 {isLoading ? (

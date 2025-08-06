@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MenuItem from '@/components/menu/MenuItem';
@@ -167,6 +167,38 @@ export default function OrderPage() {
   }>({});
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [isAddingToCart, setIsAddingToCart] = useState<string | null>(null);
+
+  // Prevent body scrolling when modal is open
+  useEffect(() => {
+    if (showCustomization) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to restore scrolling when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showCustomization]);
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showCustomization) {
+        setShowCustomization(null);
+        setTempCustomizations({});
+      }
+    };
+
+    if (showCustomization) {
+      document.addEventListener('keydown', handleEscKey);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [showCustomization]);
 
   const addToCart = async (item: MenuItem, customizations?: {
     batter?: string;
@@ -454,8 +486,17 @@ export default function OrderPage() {
 
       {/* Enhanced Customization Modal */}
       {showCustomization && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-          <div className="bg-warm-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div 
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 backdrop-blur-sm"
+          onClick={() => {
+            setShowCustomization(null);
+            setTempCustomizations({});
+          }}
+        >
+          <div 
+            className="bg-warm-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             {(() => {
               const item = menuItems.find(i => i.id === showCustomization);
               if (!item) return null;
@@ -470,7 +511,7 @@ export default function OrderPage() {
                         onClick={() => setShowCustomization(null)}
                         variant="secondary"
                         size="sm"
-                        className="w-8 h-8 p-0 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 border-0"
+                        className="w-8 h-8 p-0 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 border-0 flex items-center justify-center"
                       >
                         ✕
                       </Button>
@@ -483,9 +524,6 @@ export default function OrderPage() {
                       <div className="text-6xl mb-3">{item.image}</div>
                       <h4 className="text-2xl display-font text-coastal mb-2">{item.name}</h4>
                       <p className="text-secondary mb-4 leading-relaxed">{item.description}</p>
-                      <div className="inline-flex items-center bg-accent bg-opacity-10 px-4 py-2 rounded-full">
-                        <span className="text-2xl font-bold text-accent">${item.price.toFixed(2)}</span>
-                      </div>
                     </div>
 
                     {/* Customization Options */}

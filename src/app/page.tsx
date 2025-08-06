@@ -9,7 +9,7 @@ import { menuItems } from '@/data/menuItems';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-warm-white text-foreground">
       <Header />
 
       <main>

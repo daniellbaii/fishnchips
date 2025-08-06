@@ -36,7 +36,7 @@ export default function Header({ cart = [], onCartClick }: HeaderProps) {
             </li>
             <li>
               <Link 
-                href="/#about" 
+                href="/about" 
                 className="hover:text-coastal transition-all duration-300 font-medium text-sm xl:text-base"
               >
                 About
@@ -44,7 +44,7 @@ export default function Header({ cart = [], onCartClick }: HeaderProps) {
             </li>
             <li>
               <Link 
-                href="/#contact" 
+                href="/contact" 
                 className="hover:text-coastal transition-all duration-300 font-medium text-sm xl:text-base"
               >
                 Contact

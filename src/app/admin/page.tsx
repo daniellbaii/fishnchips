@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
 import { Order } from '@/types';
 
@@ -26,6 +27,7 @@ export default function AdminPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [newOrderCount, setNewOrderCount] = useState(0);
+  const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchOrders = useCallback(async (showSpinner: boolean = false) => {
@@ -100,6 +102,17 @@ export default function AdminPage() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+      router.push('/admin/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect even if API fails
+      router.push('/admin/login');
+    }
+  };
+
   useEffect(() => {
     fetchOrders();
     
@@ -169,61 +182,82 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background">
       <header className="bg-warm-white border-b border-border sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl display-font text-coastal mb-1">Restaurant Admin</h1>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-shrink-0">
+              <h1 className="text-xl sm:text-2xl display-font text-coastal mb-1">Restaurant Admin</h1>
               <p className="text-secondary text-sm">Mount Pleasant Fish & Chips</p>
             </div>
-            <div className="flex items-center space-x-4">
+            
+            {/* Mobile: Stack vertically, Desktop: Horizontal */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
+              {/* New Orders Alert */}
               {newOrderCount > 0 && (
-                <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse">
+                <div className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold animate-pulse w-fit">
                   {newOrderCount} New Order{newOrderCount > 1 ? 's' : ''}!
                 </div>
               )}
-              <span className="text-sm text-secondary">
-                {filteredOrders.length} orders
-              </span>
-              <span className="text-xs text-secondary">
-                Last updated: {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-              <Button 
-                onClick={() => {
-                  fetchOrders();
-                  setNewOrderCount(0);
-                }} 
-                variant="secondary"
-                size="sm"
-                className="text-xs"
-              >
-                🔄 Refresh
-              </Button>
+              
+              {/* Stats Row */}
+              <div className="flex items-center gap-3 text-xs sm:text-sm text-secondary">
+                <span className="font-medium">
+                  📊 {filteredOrders.length} orders
+                </span>
+                <span className="hidden sm:inline">
+                  🕒 {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={() => {
+                    fetchOrders();
+                    setNewOrderCount(0);
+                  }} 
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs px-3 py-2"
+                >
+                  🔄 <span className="hidden sm:inline ml-1">Refresh</span>
+                </Button>
+                <Button 
+                  onClick={handleLogout} 
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs px-3 py-2 border border-red-200 hover:bg-red-50 hover:text-red-700"
+                >
+                  🚪 <span className="hidden sm:inline ml-1">Logout</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
-        {/* Filter Buttons */}
+        {/* Filter Buttons - Mobile Scrollable */}
         <div className="mb-6">
-          <div className="flex flex-wrap gap-2">
-            {[
-              { key: 'all', label: 'All Orders', count: orders.length },
-              { key: 'pending', label: 'Pending', count: orders.filter(o => o.status === 'pending').length },
-              { key: 'preparing', label: 'Preparing', count: orders.filter(o => o.status === 'preparing').length },
-              { key: 'ready', label: 'Ready', count: orders.filter(o => o.status === 'ready').length },
-            ].map(filter => (
-              <button
-                key={filter.key}
-                onClick={() => setFilterStatus(filter.key)}
-                className={`px-4 py-2 rounded-lg border transition-colors ${
-                  filterStatus === filter.key
-                    ? 'bg-coastal text-white border-coastal'
-                    : 'bg-warm-white text-secondary border-border hover:border-coastal hover:text-coastal'
-                }`}
-              >
-                {filter.label} ({filter.count})
-              </button>
-            ))}
+          <div className="overflow-x-auto scrollbar-hide">
+            <div className="flex gap-2 min-w-max pb-2">
+              {[
+                { key: 'all', label: 'All Orders', count: orders.length },
+                { key: 'pending', label: 'Pending', count: orders.filter(o => o.status === 'pending').length },
+                { key: 'preparing', label: 'Preparing', count: orders.filter(o => o.status === 'preparing').length },
+                { key: 'ready', label: 'Ready', count: orders.filter(o => o.status === 'ready').length },
+              ].map(filter => (
+                <button
+                  key={filter.key}
+                  onClick={() => setFilterStatus(filter.key)}
+                  className={`flex-shrink-0 px-3 sm:px-4 py-2 rounded-lg border transition-colors text-sm whitespace-nowrap ${
+                    filterStatus === filter.key
+                      ? 'bg-coastal text-white border-coastal'
+                      : 'bg-warm-white text-secondary border-border hover:border-coastal hover:text-coastal'
+                  }`}
+                >
+                  {filter.label} ({filter.count})
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -239,23 +273,26 @@ export default function AdminPage() {
         ) : (
           <div className="space-y-4">
             {filteredOrders.map(order => (
-              <div key={order.id} className="bg-warm-white rounded-lg border border-border p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
+              <div key={order.id} className="bg-warm-white rounded-lg border border-border p-4 sm:p-6">
+                {/* Mobile: Stack header info vertically, Desktop: Side by side */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                  <div className="flex-1">
                     <h3 className="font-semibold text-coastal text-lg">
                       Order #{order.id.slice(-6)}
                     </h3>
-                    <p className="text-secondary text-sm">
-                      {formatDate(order.createdAt)} at {formatTime(order.createdAt)}
-                    </p>
-                    {order.estimatedReady && (
-                      <p className="text-accent text-sm font-medium">
-                        Est. ready: {formatTime(order.estimatedReady)}
-                      </p>
-                    )}
+                    <div className="text-secondary text-sm space-y-1">
+                      <p>{formatDate(order.createdAt)} at {formatTime(order.createdAt)}</p>
+                      {order.estimatedReady && (
+                        <p className="text-accent font-medium">
+                          Est. ready: {formatTime(order.estimatedReady)}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${statusColors[order.status]}`}>
+                  
+                  {/* Mobile: Full width, Desktop: Right aligned */}
+                  <div className="flex items-center justify-between sm:justify-end gap-3">
+                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${statusColors[order.status]}`}>
                       {statusLabels[order.status]}
                     </span>
                     <span className="font-bold text-lg text-coastal">
@@ -264,39 +301,57 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Mobile: Stack sections, Desktop: Side by side */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                   {/* Customer Info */}
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-2">Customer Information</h4>
-                    <div className="space-y-1 text-sm">
-                      <p><span className="text-secondary">Name:</span> {order.customerName}</p>
-                      <p><span className="text-secondary">Phone:</span> {order.customerPhone}</p>
+                  <div className="bg-muted-warm p-3 sm:p-4 rounded-lg">
+                    <h4 className="font-semibold text-foreground mb-3 flex items-center">
+                      👤 Customer Information
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                        <span className="text-secondary font-medium min-w-[60px]">Name:</span> 
+                        <span className="font-medium text-foreground">{order.customerName}</span>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                        <span className="text-secondary font-medium min-w-[60px]">Phone:</span> 
+                        <span className="font-medium text-foreground">{order.customerPhone}</span>
+                      </div>
                       {order.customerEmail && (
-                        <p><span className="text-secondary">Email:</span> {order.customerEmail}</p>
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+                          <span className="text-secondary font-medium min-w-[60px]">Email:</span> 
+                          <span className="font-medium text-foreground break-all">{order.customerEmail}</span>
+                        </div>
                       )}
                     </div>
                   </div>
 
                   {/* Order Items */}
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-2">Order Items</h4>
-                    <div className="space-y-2">
+                  <div className="bg-muted-warm p-3 sm:p-4 rounded-lg">
+                    <h4 className="font-semibold text-foreground mb-3 flex items-center">
+                      🍽️ Order Items
+                    </h4>
+                    <div className="space-y-3">
                       {order.items.map((item, index) => (
-                        <div key={index} className="flex justify-between items-center text-sm">
-                          <div className="flex-1">
-                            <span className="font-medium">{item.quantity}x {item.name}</span>
-                            {item.selectedCustomizations && (
-                              <div className="text-xs text-secondary ml-4">
-                                {Object.entries(item.selectedCustomizations)
-                                  .filter(([_, value]) => value)
-                                  .map(([key, value]) => `${key}: ${value}`)
-                                  .join(', ')}
-                              </div>
-                            )}
+                        <div key={index} className="border-b border-border last:border-b-0 pb-2 last:pb-0">
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="flex-1 min-w-0">
+                              <span className="font-medium text-sm sm:text-base block">
+                                {item.quantity}x {item.name}
+                              </span>
+                              {item.selectedCustomizations && (
+                                <div className="text-xs text-secondary mt-1 leading-relaxed">
+                                  {Object.entries(item.selectedCustomizations)
+                                    .filter(([_, value]) => value)
+                                    .map(([key, value]) => `${key}: ${value}`)
+                                    .join(', ')}
+                                </div>
+                              )}
+                            </div>
+                            <span className="font-bold text-sm sm:text-base text-coastal flex-shrink-0">
+                              ${(item.price * item.quantity).toFixed(2)}
+                            </span>
                           </div>
-                          <span className="font-medium">
-                            ${(item.price * item.quantity).toFixed(2)}
-                          </span>
                         </div>
                       ))}
                     </div>
@@ -304,34 +359,39 @@ export default function AdminPage() {
                 </div>
 
                 {/* Status Update Buttons */}
-                <div className="mt-6 flex flex-wrap gap-2">
-                  {order.status === 'pending' && (
-                    <Button
-                      onClick={() => updateOrderStatus(order.id, 'preparing')}
-                      variant="coastal"
-                      size="sm"
-                    >
-                      Start Preparing
-                    </Button>
-                  )}
-                  {order.status === 'preparing' && (
-                    <Button
-                      onClick={() => updateOrderStatus(order.id, 'ready')}
-                      variant="warm"
-                      size="sm"
-                    >
-                      Mark Ready
-                    </Button>
-                  )}
-                  {order.status === 'ready' && (
-                    <Button
-                      onClick={() => updateOrderStatus(order.id, 'completed')}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      Mark Completed
-                    </Button>
-                  )}
+                <div className="mt-4 sm:mt-6 pt-4 border-t border-border">
+                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    {order.status === 'pending' && (
+                      <Button
+                        onClick={() => updateOrderStatus(order.id, 'preparing')}
+                        variant="coastal"
+                        size="sm"
+                        className="w-full sm:w-auto justify-center sm:justify-start"
+                      >
+                        👨‍🍳 Start Preparing
+                      </Button>
+                    )}
+                    {order.status === 'preparing' && (
+                      <Button
+                        onClick={() => updateOrderStatus(order.id, 'ready')}
+                        variant="warm"
+                        size="sm"
+                        className="w-full sm:w-auto justify-center sm:justify-start"
+                      >
+                        ✅ Mark Ready
+                      </Button>
+                    )}
+                    {order.status === 'ready' && (
+                      <Button
+                        onClick={() => updateOrderStatus(order.id, 'completed')}
+                        variant="secondary"
+                        size="sm"
+                        className="w-full sm:w-auto justify-center sm:justify-start"
+                      >
+                        ✅ Mark Completed
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

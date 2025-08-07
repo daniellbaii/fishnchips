@@ -176,7 +176,11 @@ export default function AdminPage() {
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
           <h2 className="text-xl font-medium text-secondary">{error}</h2>
-          <Button onClick={() => fetchOrders()} className="mt-4">Try Again</Button>
+          <Button onClick={() => {
+            setError(null);
+            setLoading(true);
+            fetchOrders(true);
+          }} className="mt-4">Try Again</Button>
         </div>
       </div>
     );

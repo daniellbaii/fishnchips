@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
 export interface BusinessHours {
   dayOfWeek: number;
@@ -17,44 +17,6 @@ export interface RestaurantStatus {
   nextOpenTime: string | null;
 }
 
-const DEFAULT_HOURS: BusinessHours[] = [
-  { dayOfWeek: 0, openTime: "16:00", closeTime: "20:30", isClosed: false, isHoliday: false, holidayName: null }, // Sunday
-  { dayOfWeek: 1, openTime: "11:30", closeTime: "20:30", isClosed: false, isHoliday: false, holidayName: null }, // Monday
-  { dayOfWeek: 2, openTime: "11:30", closeTime: "20:30", isClosed: false, isHoliday: false, holidayName: null }, // Tuesday
-  { dayOfWeek: 3, openTime: "11:30", closeTime: "20:30", isClosed: false, isHoliday: false, holidayName: null }, // Wednesday
-  { dayOfWeek: 4, openTime: "11:30", closeTime: "20:30", isClosed: false, isHoliday: false, holidayName: null }, // Thursday
-  { dayOfWeek: 5, openTime: "11:30", closeTime: "20:30", isClosed: false, isHoliday: false, holidayName: null }, // Friday
-  { dayOfWeek: 6, openTime: "11:30", closeTime: "21:00", isClosed: false, isHoliday: false, holidayName: null }, // Saturday
-];
-
-export async function initializeBusinessHours() {
-  try {
-    const existingHours = await prisma.businessHours.findMany();
-    
-    if (existingHours.length === 0) {
-      // Initialize with default hours
-      await prisma.businessHours.createMany({
-        data: DEFAULT_HOURS
-      });
-    }
-    
-    // Initialize restaurant status if not exists
-    const existingStatus = await prisma.restaurantStatus.findFirst();
-    if (!existingStatus) {
-      await prisma.restaurantStatus.create({
-        data: {
-          id: 'singleton',
-          isOpen: true,
-          isTemporarilyClosed: false,
-        }
-      });
-    }
-    
-  } catch (error) {
-    console.error('Error initializing business hours:', error);
-  }
-}
-
 export async function getCurrentRestaurantStatus(): Promise<RestaurantStatus> {
   try {
     const now = new Date();
@@ -62,26 +24,29 @@ export async function getCurrentRestaurantStatus(): Promise<RestaurantStatus> {
     const currentTime = now.toTimeString().slice(0, 5); // "HH:MM" format
     
     // Get restaurant status and business hours
-    const [status, businessHours] = await Promise.all([
-      prisma.restaurantStatus.findFirst(),
-      prisma.businessHours.findUnique({ where: { dayOfWeek: currentDay } })
+    const [statusResult, businessHoursResult] = await Promise.all([
+      supabase.from('restaurant_status').select('*').eq('id', 'singleton').single(),
+      supabase.from('business_hours').select('*').eq('day_of_week', currentDay).single()
     ]);
     
+    const status = statusResult.data;
+    const businessHours = businessHoursResult.data;
+    
     // Check if temporarily closed by admin
-    if (status?.isTemporarilyClosed) {
+    if (status?.is_temporarily_closed) {
       return {
         isOpen: false,
         isTemporarilyClosed: true,
-        closureReason: status.closureReason || 'Temporarily closed',
+        closureReason: status.closure_reason || 'Temporarily closed',
         currentTime,
         nextOpenTime: await getNextOpenTime()
       };
     }
     
     // Check if closed for the day or holiday
-    if (!businessHours || businessHours.isClosed || businessHours.isHoliday) {
-      const reason = businessHours?.isHoliday 
-        ? `Closed for ${businessHours.holidayName || 'holiday'}`
+    if (!businessHours || businessHours.is_closed || businessHours.is_holiday) {
+      const reason = businessHours?.is_holiday 
+        ? `Closed for ${businessHours.holiday_name || 'holiday'}`
         : 'Closed today';
         
       return {
@@ -94,8 +59,8 @@ export async function getCurrentRestaurantStatus(): Promise<RestaurantStatus> {
     }
     
     // Check if within business hours
-    const isWithinHours = businessHours.openTime && businessHours.closeTime &&
-      currentTime >= businessHours.openTime && currentTime <= businessHours.closeTime;
+    const isWithinHours = businessHours.open_time && businessHours.close_time &&
+      currentTime >= businessHours.open_time && currentTime <= businessHours.close_time;
     
     return {
       isOpen: Boolean(isWithinHours),
@@ -125,24 +90,26 @@ async function getNextOpenTime(): Promise<string | null> {
     // Look for next opening time in the next 7 days
     for (let i = 0; i < 7; i++) {
       const checkDay = (currentDay + i) % 7;
-      const businessHours = await prisma.businessHours.findUnique({ 
-        where: { dayOfWeek: checkDay } 
-      });
+      const { data: businessHours } = await supabase
+        .from('business_hours')
+        .select('*')
+        .eq('day_of_week', checkDay)
+        .single();
       
-      if (businessHours && !businessHours.isClosed && !businessHours.isHoliday && businessHours.openTime) {
+      if (businessHours && !businessHours.is_closed && !businessHours.is_holiday && businessHours.open_time) {
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const dayName = dayNames[checkDay];
         
         if (i === 0) {
           // Same day - check if opening time is in the future
           const currentTime = now.toTimeString().slice(0, 5);
-          if (businessHours.openTime > currentTime) {
-            return `Today at ${businessHours.openTime}`;
+          if (businessHours.open_time > currentTime) {
+            return `Today at ${businessHours.open_time}`;
           }
         } else if (i === 1) {
-          return `Tomorrow at ${businessHours.openTime}`;
+          return `Tomorrow at ${businessHours.open_time}`;
         } else {
-          return `${dayName} at ${businessHours.openTime}`;
+          return `${dayName} at ${businessHours.open_time}`;
         }
       }
     }
@@ -151,60 +118,5 @@ async function getNextOpenTime(): Promise<string | null> {
   } catch (error) {
     console.error('Error getting next open time:', error);
     return null;
-  }
-}
-
-export async function updateBusinessHours(dayOfWeek: number, hours: Partial<BusinessHours>) {
-  try {
-    await prisma.businessHours.upsert({
-      where: { dayOfWeek },
-      create: { dayOfWeek, ...hours },
-      update: hours
-    });
-  } catch (error) {
-    console.error('Error updating business hours:', error);
-    throw error;
-  }
-}
-
-export async function setTemporaryClosure(isClosed: boolean, reason?: string) {
-  try {
-    await prisma.restaurantStatus.upsert({
-      where: { id: 'singleton' },
-      create: {
-        id: 'singleton',
-        isTemporarilyClosed: isClosed,
-        closureReason: reason || null,
-        lastUpdated: new Date()
-      },
-      update: {
-        isTemporarilyClosed: isClosed,
-        closureReason: reason || null,
-        lastUpdated: new Date()
-      }
-    });
-  } catch (error) {
-    console.error('Error setting temporary closure:', error);
-    throw error;
-  }
-}
-
-export async function getAllBusinessHours(): Promise<BusinessHours[]> {
-  try {
-    const hours = await prisma.businessHours.findMany({
-      orderBy: { dayOfWeek: 'asc' }
-    });
-    
-    return hours.map(h => ({
-      dayOfWeek: h.dayOfWeek,
-      openTime: h.openTime,
-      closeTime: h.closeTime,
-      isClosed: h.isClosed,
-      isHoliday: h.isHoliday,
-      holidayName: h.holidayName
-    }));
-  } catch (error) {
-    console.error('Error getting business hours:', error);
-    return [];
   }
 }

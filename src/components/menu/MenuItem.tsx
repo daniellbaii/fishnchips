@@ -1,13 +1,17 @@
 import React from 'react';
 import { MenuItem as MenuItemType } from '@/types';
 
+interface ExtendedMenuItem extends MenuItemType {
+  isOutOfStock?: boolean;
+}
+
 interface MenuItemListProps {
-  item: MenuItemType;
+  item: ExtendedMenuItem;
   variant: 'list';
 }
 
 interface MenuItemCardProps {
-  item: MenuItemType;
+  item: ExtendedMenuItem;
   variant: 'card';
   onAddToCart?: () => void;
   isLoading?: boolean;
@@ -29,20 +33,36 @@ export default function MenuItem(props: MenuItemProps) {
 
   if (variant === 'card') {
     const { onAddToCart, isLoading } = props;
+    const isOutOfStock = item.isOutOfStock;
     
     return (
       <div className="group relative">
         <div 
-          className="menu-card hover:shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-1"
-          onClick={onAddToCart}
+          className={`menu-card transition-all duration-300 ${
+            isOutOfStock 
+              ? 'opacity-75 hover:shadow-md' 
+              : 'hover:shadow-xl cursor-pointer hover:-translate-y-1'
+          }`}
+          onClick={isOutOfStock ? undefined : onAddToCart}
         >
           {/* Price Badge */}
-          <div className="absolute top-4 right-4 bg-accent text-white font-bold px-3 py-1 rounded-full text-lg shadow-lg z-10">
+          <div className={`absolute top-4 right-4 font-bold px-3 py-1 rounded-full text-lg shadow-lg z-10 ${
+            isOutOfStock 
+              ? 'bg-gray-400 text-white' 
+              : 'bg-accent text-white'
+          }`}>
             ${item.price.toFixed(2)}
           </div>
           
+          {/* Out of Stock Badge */}
+          {isOutOfStock && (
+            <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
+              🚫 Out of Stock
+            </div>
+          )}
+          
           {/* Popular Badge */}
-          {item.popular && (
+          {item.popular && !isOutOfStock && (
             <div className="absolute top-4 left-4 bg-accent text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
               ⭐ Popular
             </div>
@@ -77,16 +97,20 @@ export default function MenuItem(props: MenuItemProps) {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onAddToCart?.();
+                  if (!isOutOfStock) {
+                    onAddToCart?.();
+                  }
                 }}
-                disabled={isLoading}
+                disabled={isLoading || isOutOfStock}
                 className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 ${
-                  isLoading
+                  isLoading || isOutOfStock
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                     : 'btn-coastal hover:shadow-lg cursor-pointer'
                 }`}
               >
-                {isLoading ? (
+                {isOutOfStock ? (
+                  '🚫 Currently Unavailable'
+                ) : isLoading ? (
                   <span className="flex items-center justify-center">
                     <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>

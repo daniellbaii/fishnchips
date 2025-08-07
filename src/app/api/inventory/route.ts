@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 import { menuItems } from '@/data/menuItems';
 
 export async function GET() {
   try {
     // Get all menu items and their inventory status
-    const inventoryItems = await prisma.menuItem.findMany();
+    const { data: inventoryItems, error } = await supabase
+      .from('menu_items')
+      .select('*');
+    
+    if (error) throw error;
     
     // Create a map for quick lookup
-    const inventoryMap = new Map(inventoryItems.map(item => [item.id, item]));
+    const inventoryMap = new Map(inventoryItems?.map(item => [item.id, item]) || []);
     
     // Combine with static menu data
     const menuWithInventory = menuItems.map(item => ({
@@ -19,9 +23,9 @@ export async function GET() {
       description: item.description,
       image: item.image,
       popular: item.popular || false,
-      isAvailable: inventoryMap.get(item.id)?.isAvailable ?? true,
-      isOutOfStock: inventoryMap.get(item.id)?.isOutOfStock ?? false,
-      lastUpdated: inventoryMap.get(item.id)?.lastUpdated?.toISOString() || null
+      isAvailable: inventoryMap.get(item.id)?.is_available ?? true,
+      isOutOfStock: inventoryMap.get(item.id)?.is_out_of_stock ?? false,
+      lastUpdated: inventoryMap.get(item.id)?.last_updated || null
     }));
 
     return NextResponse.json({ items: menuWithInventory });
@@ -43,20 +47,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Update or create inventory item
-    await prisma.menuItem.upsert({
-      where: { id: itemId },
-      create: {
+    const { error } = await supabase
+      .from('menu_items')
+      .upsert({
         id: itemId,
-        isAvailable,
-        isOutOfStock,
-        lastUpdated: new Date()
-      },
-      update: {
-        isAvailable,
-        isOutOfStock,
-        lastUpdated: new Date()
-      }
-    });
+        is_available: isAvailable,
+        is_out_of_stock: isOutOfStock,
+        last_updated: new Date().toISOString()
+      });
+      
+    if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {

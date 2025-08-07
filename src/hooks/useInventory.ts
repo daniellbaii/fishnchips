@@ -63,8 +63,8 @@ export function useInventory() {
     }
   };
 
-  // Get available items only (not disabled and not out of stock)
-  const availableItems = inventory.filter(item => item.isAvailable && !item.isOutOfStock);
+  // Get available items (not disabled, but include out-of-stock items)
+  const availableItems = inventory.filter(item => item.isAvailable);
 
   // Get items by category, filtered by availability
   const getItemsByCategory = (category: string) => {

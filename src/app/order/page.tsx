@@ -49,7 +49,12 @@ export default function OrderPage() {
     setIsAddingToCart(null);
   }, [addToCart]);
 
-  const handleItemClick = useCallback((item: MenuItemType) => {
+  const handleItemClick = useCallback((item: MenuItemType & { isOutOfStock?: boolean }) => {
+    // Don't allow adding out-of-stock items to cart
+    if (item.isOutOfStock) {
+      return;
+    }
+    
     if (item.customizations && Object.keys(item.customizations).length > 0) {
       setShowCustomization(item.id);
       setTempCustomizations({});

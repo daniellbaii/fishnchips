@@ -66,6 +66,33 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Interactive elements cursor styling */
+button,
+input[type="submit"],
+input[type="button"],
+input[type="reset"],
+input[type="file"],
+select,
+[role="button"],
+[type="button"],
+[type="submit"],
+[type="reset"],
+a[href],
+area[href],
+summary,
+[tabindex]:not([tabindex="-1"]),
+.cursor-pointer {
+  cursor: pointer;
+}
+
+/* Ensure disabled elements don't show pointer */
+button:disabled,
+input:disabled,
+select:disabled,
+[disabled] {
+  cursor: not-allowed;
+}
+
 /* Coastal-inspired utility classes */
 .coastal-shadow {
   box-shadow: 0 4px 20px rgba(25, 118, 210, 0.1), 0 1px 3px rgba(25, 118, 210, 0.1);
@@ -106,6 +133,7 @@ html {
   letter-spacing: 0.5px;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+  cursor: pointer;
 }
 
 .btn-coastal:hover {
@@ -123,6 +151,7 @@ html {
   font-weight: 600;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(255, 112, 67, 0.3);
+  cursor: pointer;
 }
 
 .btn-warm:hover {

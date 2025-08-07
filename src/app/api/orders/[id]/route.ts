@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
 export async function PATCH(
   request: NextRequest,
@@ -19,20 +19,44 @@ export async function PATCH(
     }
 
     // Update order status
-    const updatedOrder = await prisma.order.update({
-      where: { id },
-      data: {
+    const { data: updatedOrder, error: updateError } = await supabase
+      .from('orders')
+      .update({
         status,
-        completedAt: status === 'completed' ? new Date() : null,
-      },
-    });
+        completed_at: status === 'completed' ? new Date().toISOString() : null,
+      })
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (updateError) throw updateError;
+
+    // Get order with details
+    const { data: orderDetails, error: detailsError } = await supabase
+      .from('orders_with_details')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (detailsError) throw detailsError;
+
+    // Transform the data to match the frontend Order interface
+    const transformedOrder = {
+      id: orderDetails.id,
+      customerName: orderDetails.customer_name,
+      customerPhone: orderDetails.customer_phone,
+      customerEmail: orderDetails.customer_email,
+      items: orderDetails.items,
+      total: orderDetails.total,
+      status: orderDetails.status,
+      createdAt: orderDetails.created_at,
+      estimatedReady: orderDetails.estimated_ready,
+      completedAt: orderDetails.completed_at
+    };
 
     return NextResponse.json({
       success: true,
-      order: {
-        ...updatedOrder,
-        items: JSON.parse(updatedOrder.items),
-      }
+      order: transformedOrder
     });
 
   } catch (error) {
@@ -50,21 +74,34 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const order = await prisma.order.findUnique({
-      where: { id },
-    });
+    const { data: order, error } = await supabase
+      .from('orders_with_details')
+      .select('*')
+      .eq('id', id)
+      .single();
 
-    if (!order) {
+    if (error || !order) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({
-      ...order,
-      items: JSON.parse(order.items),
-    });
+    // Transform the data to match the frontend Order interface
+    const transformedOrder = {
+      id: order.id,
+      customerName: order.customer_name,
+      customerPhone: order.customer_phone,
+      customerEmail: order.customer_email,
+      items: order.items,
+      total: order.total,
+      status: order.status,
+      createdAt: order.created_at,
+      estimatedReady: order.estimated_ready,
+      completedAt: order.completed_at
+    };
+
+    return NextResponse.json(transformedOrder);
 
   } catch (error) {
     console.error('Failed to fetch order:', error);

@@ -1,24 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllBusinessHours, updateBusinessHours, setTemporaryClosure, initializeBusinessHours } from '@/lib/businessHours';
-import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    // Initialize business hours if not exists
-    await initializeBusinessHours();
-    
     // Get all business hours and restaurant status
-    const [businessHours, restaurantStatus] = await Promise.all([
-      getAllBusinessHours(),
-      prisma.restaurantStatus.findFirst()
+    const [businessHoursResult, restaurantStatusResult] = await Promise.all([
+      supabase.from('business_hours').select('*').order('day_of_week'),
+      supabase.from('restaurant_status').select('*').eq('id', 'singleton').single()
     ]);
 
+    const businessHours = businessHoursResult.data || [];
+    const restaurantStatus = restaurantStatusResult.data || {
+      is_temporarily_closed: false,
+      closure_reason: null,
+      last_updated: null
+    };
+
     return NextResponse.json({
-      businessHours,
-      restaurantStatus: restaurantStatus || {
-        isTemporarilyClosed: false,
-        closureReason: null,
-        lastUpdated: null
+      businessHours: businessHours.map(bh => ({
+        dayOfWeek: bh.day_of_week,
+        openTime: bh.open_time,
+        closeTime: bh.close_time,
+        isClosed: bh.is_closed,
+        isHoliday: bh.is_holiday,
+        holidayName: bh.holiday_name
+      })),
+      restaurantStatus: {
+        isTemporarilyClosed: restaurantStatus.is_temporarily_closed,
+        closureReason: restaurantStatus.closure_reason,
+        lastUpdated: restaurantStatus.last_updated
       }
     });
   } catch (error) {
@@ -33,15 +43,32 @@ export async function POST(request: NextRequest) {
     const { action, dayOfWeek, hours, temporaryClosure } = body;
 
     if (action === 'updateHours' && typeof dayOfWeek === 'number' && hours) {
-      await updateBusinessHours(dayOfWeek, hours);
+      const { error } = await supabase
+        .from('business_hours')
+        .upsert({
+          day_of_week: dayOfWeek,
+          open_time: hours.openTime,
+          close_time: hours.closeTime,
+          is_closed: hours.isClosed || false,
+          is_holiday: hours.isHoliday || false,
+          holiday_name: hours.holidayName || null
+        });
+      
+      if (error) throw error;
       return NextResponse.json({ success: true });
     }
 
     if (action === 'temporaryClosure' && temporaryClosure !== undefined) {
-      await setTemporaryClosure(
-        temporaryClosure.isClosed, 
-        temporaryClosure.reason
-      );
+      const { error } = await supabase
+        .from('restaurant_status')
+        .upsert({
+          id: 'singleton',
+          is_temporarily_closed: temporaryClosure.isClosed,
+          closure_reason: temporaryClosure.reason || null,
+          last_updated: new Date().toISOString()
+        });
+      
+      if (error) throw error;
       return NextResponse.json({ success: true });
     }
 

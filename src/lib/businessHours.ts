@@ -19,9 +19,13 @@ export interface RestaurantStatus {
 
 export async function getCurrentRestaurantStatus(): Promise<RestaurantStatus> {
   try {
+    // Use Perth, Australia timezone for restaurant operations
     const now = new Date();
-    const currentDay = now.getDay();
-    const currentTime = now.toTimeString().slice(0, 5); // "HH:MM" format
+    
+    // Convert to Perth time (UTC+8, AWST - no daylight saving)
+    const perthTime = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Perth"}));
+    const currentDay = perthTime.getDay();
+    const currentTime = perthTime.toTimeString().slice(0, 5); // "HH:MM" format
     
     // Get restaurant status and business hours
     const [statusResult, businessHoursResult] = await Promise.all([
@@ -58,14 +62,17 @@ export async function getCurrentRestaurantStatus(): Promise<RestaurantStatus> {
       };
     }
     
-    // Check if within business hours
-    const isWithinHours = businessHours.open_time && businessHours.close_time &&
-      currentTime >= businessHours.open_time && currentTime <= businessHours.close_time;
+    // Check if within business hours with improved time comparison
+    const isWithinHours = isCurrentTimeWithinBusinessHours(
+      currentTime, 
+      businessHours.open_time, 
+      businessHours.close_time
+    );
     
     return {
-      isOpen: Boolean(isWithinHours),
+      isOpen: isWithinHours,
       isTemporarilyClosed: false,
-      closureReason: isWithinHours ? null : 'Currently closed',
+      closureReason: isWithinHours ? null : `Currently closed - Open ${businessHours.open_time} to ${businessHours.close_time}`,
       currentTime,
       nextOpenTime: isWithinHours ? null : await getNextOpenTime()
     };
@@ -82,10 +89,37 @@ export async function getCurrentRestaurantStatus(): Promise<RestaurantStatus> {
   }
 }
 
+// Helper function to properly compare times, handling edge cases like midnight crossover
+function isCurrentTimeWithinBusinessHours(currentTime: string, openTime: string | null, closeTime: string | null): boolean {
+  if (!openTime || !closeTime) {
+    return false;
+  }
+  
+  // Convert time strings to minutes for easier comparison
+  const timeToMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+  
+  const current = timeToMinutes(currentTime);
+  const open = timeToMinutes(openTime);
+  const close = timeToMinutes(closeTime);
+  
+  // Handle normal hours (e.g., 09:00 to 17:00)
+  if (open <= close) {
+    return current >= open && current <= close;
+  }
+  
+  // Handle overnight hours (e.g., 22:00 to 02:00)
+  return current >= open || current <= close;
+}
+
 async function getNextOpenTime(): Promise<string | null> {
   try {
     const now = new Date();
-    const currentDay = now.getDay();
+    const perthTime = new Date(now.toLocaleString("en-US", {timeZone: "Australia/Perth"}));
+    const currentDay = perthTime.getDay();
+    const currentTime = perthTime.toTimeString().slice(0, 5);
     
     // Look for next opening time in the next 7 days
     for (let i = 0; i < 7; i++) {
@@ -102,7 +136,6 @@ async function getNextOpenTime(): Promise<string | null> {
         
         if (i === 0) {
           // Same day - check if opening time is in the future
-          const currentTime = now.toTimeString().slice(0, 5);
           if (businessHours.open_time > currentTime) {
             return `Today at ${businessHours.open_time}`;
           }

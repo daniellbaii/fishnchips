@@ -15,7 +15,8 @@ export interface AdminUser {
 
 export async function validateAdminPassword(password: string): Promise<boolean> {
   try {
-    return await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    const result = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    return result;
   } catch (error) {
     console.error('Password validation error:', error);
     return false;

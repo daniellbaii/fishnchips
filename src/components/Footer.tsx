@@ -27,13 +27,13 @@ export default function Footer() {
               Order
             </Link>
             <Link 
-              href="/#about" 
+              href="/about" 
               className="text-secondary hover:text-coastal transition-colors"
             >
               About
             </Link>
             <Link 
-              href="/#contact" 
+              href="/contact" 
               className="text-secondary hover:text-coastal transition-colors"
             >
               Contact

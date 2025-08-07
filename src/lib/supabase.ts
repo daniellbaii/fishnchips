@@ -3,9 +3,14 @@ import { createClient } from '@supabase/supabase-js'
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321'
 const supabaseKey = process.env.SUPABASE_ANON_KEY || 'dummy-key-for-build'
 
-// Only throw errors at runtime, not during build
-if (typeof window !== 'undefined' && (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_ANON_KEY)) {
-  console.warn('Missing Supabase environment variables. Please check your .env file.')
+// Environment variable validation
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL === 'http://localhost:54321') {
+    console.warn('Missing NEXT_PUBLIC_SUPABASE_URL environment variable')
+  }
+  if (!process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY === 'dummy-key-for-build') {
+    console.warn('Missing SUPABASE_ANON_KEY environment variable')
+  }
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey)

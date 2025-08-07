@@ -1,26 +1,21 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '@/components/ui/Button';
-import BusinessHoursManager from '@/components/admin/BusinessHoursManager';
-import InventoryManager from '@/components/admin/InventoryManager';
-import AnalyticsDashboard from '@/components/admin/AnalyticsDashboard';
+import OrderCard from '@/components/admin/OrderCard';
+import { AdminLoadingState, OrdersLoadingState } from '@/components/admin/AdminLoadingState';
+import { TabLoadingState } from '@/components/admin/TabLoadingState';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { Order } from '@/types';
+import { ORDER_STATUS_CONFIG, TIMING, API_ENDPOINTS } from '@/lib/constants';
+import { useDebounce } from '@/hooks/useDebounce';
+import { formatTime, formatDate } from '@/lib/utils';
 
-const statusColors = {
-  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  preparing: 'bg-blue-100 text-blue-800 border-blue-200',
-  ready: 'bg-green-100 text-green-800 border-green-200',
-  completed: 'bg-gray-100 text-gray-800 border-gray-200',
-};
-
-const statusLabels = {
-  pending: '⏳ Pending',
-  preparing: '👨‍🍳 Preparing',
-  ready: '✅ Ready',
-  completed: '✅ Completed',
-};
+// Lazy load heavy components that are not always visible
+const BusinessHoursManager = lazy(() => import('@/components/admin/BusinessHoursManager'));
+const InventoryManager = lazy(() => import('@/components/admin/InventoryManager'));
+const AnalyticsDashboard = lazy(() => import('@/components/admin/AnalyticsDashboard'));
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState<'orders' | 'hours' | 'inventory' | 'analytics'>('orders');
@@ -38,7 +33,7 @@ export default function AdminPage() {
     try {
       if (showSpinner) setIsRefreshing(true);
       
-      const response = await fetch('/api/orders');
+      const response = await fetch(API_ENDPOINTS.ORDERS);
       if (!response.ok) throw new Error('Failed to fetch orders');
       
       const data = await response.json();
@@ -85,7 +80,7 @@ export default function AdminPage() {
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
-      const response = await fetch(`/api/orders/${orderId}`, {
+      const response = await fetch(`${API_ENDPOINTS.ORDERS}/${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -117,21 +112,25 @@ export default function AdminPage() {
     }
   };
 
+  // Debounced refresh to prevent excessive API calls
+  const debouncedRefresh = useDebounce(() => {
+    if (typeof document !== 'undefined' && !document.hidden) {
+      fetchOrders();
+    }
+  }, 1000);
+
   useEffect(() => {
     fetchOrders();
     
-    // Auto-refresh every 30 seconds, but only when tab is visible
+    // Auto-refresh with debounced calls
     const interval = setInterval(() => {
-      // Only refresh if the page is visible (not in background tab)
-      if (typeof document !== 'undefined' && !document.hidden) {
-        fetchOrders();
-      }
-    }, 30000);
+      debouncedRefresh();
+    }, TIMING.AUTO_REFRESH_INTERVAL);
     
     // Also refresh when user returns to tab
     const handleVisibilityChange = () => {
       if (typeof document !== 'undefined' && !document.hidden) {
-        fetchOrders();
+        debouncedRefresh();
       }
     };
     
@@ -145,29 +144,30 @@ export default function AdminPage() {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       }
     };
-  }, [fetchOrders]);
+  }, [fetchOrders, debouncedRefresh]);
 
-  const filteredOrders = orders.filter(order => 
-    filterStatus === 'all' || order.status === filterStatus
-  );
+  // Memoize filtered orders to prevent unnecessary recalculations
+  const filteredOrders = useMemo(() => {
+    return orders.filter(order => 
+      filterStatus === 'all' || order.status === filterStatus
+    );
+  }, [orders, filterStatus]);
 
-  const formatTime = (date: string | Date) => {
-    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  // Memoize order counts for filter buttons
+  const orderCounts = useMemo(() => {
+    return {
+      all: orders.length,
+      pending: orders.filter(o => o.status === 'pending').length,
+      preparing: orders.filter(o => o.status === 'preparing').length,
+      ready: orders.filter(o => o.status === 'ready').length,
+      completed: orders.filter(o => o.status === 'completed').length
+    };
+  }, [orders]);
 
-  const formatDate = (date: string | Date) => {
-    return new Date(date).toLocaleDateString();
-  };
+  // Remove duplicate format functions - now using utils
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">🍟</div>
-          <h2 className="text-xl font-medium text-secondary">Loading orders...</h2>
-        </div>
-      </div>
-    );
+    return <AdminLoadingState />;
   }
 
   if (error) {
@@ -219,14 +219,19 @@ export default function AdminPage() {
               <div className="flex items-center gap-2">
                 <Button 
                   onClick={() => {
-                    fetchOrders();
+                    fetchOrders(true);
                     setNewOrderCount(0);
                   }} 
                   variant="secondary"
                   size="sm"
                   className="text-xs px-3 py-2"
+                  disabled={isRefreshing}
                 >
-                  🔄 <span className="hidden sm:inline ml-1">Refresh</span>
+                  {isRefreshing ? (
+                    <>⏳ <span className="hidden sm:inline ml-1">Refreshing...</span></>
+                  ) : (
+                    <>🔄 <span className="hidden sm:inline ml-1">Refresh</span></>
+                  )}
                 </Button>
                 <Button 
                   onClick={handleLogout} 
@@ -299,10 +304,10 @@ export default function AdminPage() {
           <div className="overflow-x-auto scrollbar-hide">
             <div className="flex gap-2 min-w-max pb-2">
               {[
-                { key: 'all', label: 'All Orders', count: orders.length },
-                { key: 'pending', label: 'Pending', count: orders.filter(o => o.status === 'pending').length },
-                { key: 'preparing', label: 'Preparing', count: orders.filter(o => o.status === 'preparing').length },
-                { key: 'ready', label: 'Ready', count: orders.filter(o => o.status === 'ready').length },
+                { key: 'all', label: 'All Orders', count: orderCounts.all },
+                { key: 'pending', label: 'Pending', count: orderCounts.pending },
+                { key: 'preparing', label: 'Preparing', count: orderCounts.preparing },
+                { key: 'ready', label: 'Ready', count: orderCounts.ready },
               ].map(filter => (
                 <button
                   key={filter.key}
@@ -332,127 +337,11 @@ export default function AdminPage() {
         ) : (
           <div className="space-y-4">
             {filteredOrders.map(order => (
-              <div key={order.id} className="bg-warm-white rounded-lg border border-border p-4 sm:p-6">
-                {/* Mobile: Stack header info vertically, Desktop: Side by side */}
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-coastal text-lg">
-                      Order #{order.id.slice(-6)}
-                    </h3>
-                    <div className="text-secondary text-sm space-y-1">
-                      <p>{formatDate(order.createdAt)} at {formatTime(order.createdAt)}</p>
-                      {order.estimatedReady && (
-                        <p className="text-accent font-medium">
-                          Est. ready: {formatTime(order.estimatedReady)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Mobile: Full width, Desktop: Right aligned */}
-                  <div className="flex items-center justify-between sm:justify-end gap-3">
-                    <span className={`px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border ${statusColors[order.status]}`}>
-                      {statusLabels[order.status]}
-                    </span>
-                    <span className="font-bold text-lg text-coastal">
-                      ${order.total.toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Mobile: Stack sections, Desktop: Side by side */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
-                  {/* Customer Info */}
-                  <div className="bg-muted-warm p-3 sm:p-4 rounded-lg">
-                    <h4 className="font-semibold text-foreground mb-3 flex items-center">
-                      👤 Customer Information
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
-                        <span className="text-secondary font-medium min-w-[60px]">Name:</span> 
-                        <span className="font-medium text-foreground">{order.customerName}</span>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1">
-                        <span className="text-secondary font-medium min-w-[60px]">Phone:</span> 
-                        <span className="font-medium text-foreground">{order.customerPhone}</span>
-                      </div>
-                      {order.customerEmail && (
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1">
-                          <span className="text-secondary font-medium min-w-[60px]">Email:</span> 
-                          <span className="font-medium text-foreground break-all">{order.customerEmail}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Order Items */}
-                  <div className="bg-muted-warm p-3 sm:p-4 rounded-lg">
-                    <h4 className="font-semibold text-foreground mb-3 flex items-center">
-                      🍽️ Order Items
-                    </h4>
-                    <div className="space-y-3">
-                      {order.items.map((item, index) => (
-                        <div key={index} className="border-b border-border last:border-b-0 pb-2 last:pb-0">
-                          <div className="flex justify-between items-start gap-2">
-                            <div className="flex-1 min-w-0">
-                              <span className="font-medium text-sm sm:text-base block">
-                                {item.quantity}x {item.name}
-                              </span>
-                              {item.selectedCustomizations && (
-                                <div className="text-xs text-secondary mt-1 leading-relaxed">
-                                  {Object.entries(item.selectedCustomizations)
-                                    .filter(([_, value]) => value)
-                                    .map(([key, value]) => `${key}: ${value}`)
-                                    .join(', ')}
-                                </div>
-                              )}
-                            </div>
-                            <span className="font-bold text-sm sm:text-base text-coastal flex-shrink-0">
-                              ${(item.price * item.quantity).toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Status Update Buttons */}
-                <div className="mt-4 sm:mt-6 pt-4 border-t border-border">
-                  <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-                    {order.status === 'pending' && (
-                      <Button
-                        onClick={() => updateOrderStatus(order.id, 'preparing')}
-                        variant="coastal"
-                        size="sm"
-                        className="w-full sm:w-auto justify-center sm:justify-start"
-                      >
-                        👨‍🍳 Start Preparing
-                      </Button>
-                    )}
-                    {order.status === 'preparing' && (
-                      <Button
-                        onClick={() => updateOrderStatus(order.id, 'ready')}
-                        variant="warm"
-                        size="sm"
-                        className="w-full sm:w-auto justify-center sm:justify-start"
-                      >
-                        ✅ Mark Ready
-                      </Button>
-                    )}
-                    {order.status === 'ready' && (
-                      <Button
-                        onClick={() => updateOrderStatus(order.id, 'completed')}
-                        variant="secondary"
-                        size="sm"
-                        className="w-full sm:w-auto justify-center sm:justify-start"
-                      >
-                        ✅ Mark Completed
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
+              <OrderCard
+                key={order.id}
+                order={order}
+                onUpdateStatus={updateOrderStatus}
+              />
             ))}
           </div>
         )}
@@ -461,17 +350,23 @@ export default function AdminPage() {
 
         {/* Analytics Tab */}
         {activeTab === 'analytics' && (
-          <AnalyticsDashboard />
+          <Suspense fallback={<TabLoadingState />}>
+            <AnalyticsDashboard />
+          </Suspense>
         )}
 
         {/* Inventory Tab */}
         {activeTab === 'inventory' && (
-          <InventoryManager />
+          <Suspense fallback={<TabLoadingState />}>
+            <InventoryManager />
+          </Suspense>
         )}
 
         {/* Business Hours Tab */}
         {activeTab === 'hours' && (
-          <BusinessHoursManager />
+          <Suspense fallback={<TabLoadingState />}>
+            <BusinessHoursManager />
+          </Suspense>
         )}
       </main>
     </div>

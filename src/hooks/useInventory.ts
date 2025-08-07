@@ -1,22 +1,15 @@
 import { useState, useEffect } from 'react';
 import { menuItems } from '@/data/menuItems';
+import { MenuItem, MenuCategory } from '@/types';
 
-interface InventoryItem {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  description: string;
-  image: string;
-  popular?: boolean;
+interface ExtendedMenuItem extends MenuItem {
   isAvailable: boolean;
   isOutOfStock: boolean;
   lastUpdated: string | null;
-  customizations?: any;
 }
 
 export function useInventory() {
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  const [inventory, setInventory] = useState<ExtendedMenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,12 +29,13 @@ export function useInventory() {
       const data = await response.json();
       
       // Merge inventory data with menu items to include customizations
-      const mergedItems = data.items.map((item: InventoryItem) => {
+      const mergedItems: ExtendedMenuItem[] = data.items.map((item: any) => {
         const menuItem = menuItems.find(m => m.id === item.id);
         return {
+          ...menuItem,
           ...item,
           customizations: menuItem?.customizations || {}
-        };
+        } as ExtendedMenuItem;
       });
       
       setInventory(mergedItems);
@@ -51,7 +45,7 @@ export function useInventory() {
       setError(err instanceof Error ? err.message : 'Unknown error');
       
       // Fallback to static menu items with default availability
-      const fallbackItems = menuItems.map(item => ({
+      const fallbackItems: ExtendedMenuItem[] = menuItems.map(item => ({
         ...item,
         isAvailable: true,
         isOutOfStock: false,

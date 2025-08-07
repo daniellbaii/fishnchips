@@ -17,8 +17,8 @@ export default function RestaurantStatus() {
   useEffect(() => {
     fetchStatus();
     
-    // Update every 5 minutes
-    const interval = setInterval(fetchStatus, 5 * 60 * 1000);
+    // Update every 1 minute to ensure more responsive status updates
+    const interval = setInterval(fetchStatus, 60 * 1000);
     
     return () => clearInterval(interval);
   }, []);
@@ -49,6 +49,11 @@ export default function RestaurantStatus() {
           <div>
             <div className="font-semibold">We're Open!</div>
             <div className="text-sm">Place your order now for pickup</div>
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs mt-1 opacity-75">
+                Current time: {status.currentTime}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -66,6 +71,11 @@ export default function RestaurantStatus() {
             {status.nextOpenTime && (
               <div className="mt-1">
                 Next opening: {status.nextOpenTime}
+              </div>
+            )}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="text-xs mt-1 opacity-75">
+                Current time: {status.currentTime}
               </div>
             )}
           </div>
